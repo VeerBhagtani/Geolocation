@@ -35,6 +35,13 @@ app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
 
+@app.after_request
+def no_cache(resp):
+    # Always load the latest page/script after an update (no stale browser cache)
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
 def _float_env(name, default=None):
     try:
         return float(os.environ.get(name, "").strip())
