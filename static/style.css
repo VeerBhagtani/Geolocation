@@ -1,0 +1,32 @@
+:root { --bg: #fff; --fg: #1d1d1f; --muted: #666; --border: #ccc; --accent: #1f6feb; --err: #b42318; --errbg: #fdecea; --infobg: #eef4ff; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161616; --fg: #e8e8e8; --muted: #9a9a9a; --border: #444; --accent: #4c8dff; --err: #ff8a80; --errbg: #3a1d1b; --infobg: #1d2738; }
+}
+body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--fg); margin: 0 auto; padding: 16px; max-width: 1400px; font-size: 14px; }
+h1 { font-size: 22px; }
+h2 { font-size: 16px; margin-top: 0; }
+section { border: 1px solid var(--border); border-radius: 6px; padding: 12px 16px; margin-bottom: 14px; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.grid { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 10px 0; }
+.grid label { display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+.grid label.check { flex-direction: row; align-items: center; }
+select, input, button { font: inherit; color: inherit; background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
+button { padding: 6px 12px; cursor: pointer; margin: 0 6px 6px 0; }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+button.danger { color: var(--err); }
+.msg { padding: 8px 12px; border-radius: 4px; margin: 8px 0; white-space: pre-line; }
+.msg.error { background: var(--errbg); color: var(--err); }
+.msg.info { background: var(--infobg); }
+.progress { height: 14px; background: var(--infobg); border-radius: 7px; overflow: hidden; margin: 8px 0 4px; }
+#bar { height: 100%; width: 0; background: var(--accent); }
+.summary span { display: inline-block; margin: 6px 14px 0 0; }
+.tablewrap { overflow: auto; max-height: 260px; margin: 8px 0; }
+.tablewrap.tall { max-height: 70vh; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid var(--border); padding: 3px 6px; text-align: left; vertical-align: top; }
+th { position: sticky; top: 0; background: var(--bg); }
+td.s-SUCCESS_PRECISE { color: #1a7f37; }
+td.s-SUCCESS_APPROXIMATE { color: #9a6700; }
+td.s-REVIEW_REQUIRED, td.s-NOT_FOUND, td.s-API_ERROR, td.s-MISSING_ADDRESS { color: var(--err); font-weight: 600; }
