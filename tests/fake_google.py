@@ -37,7 +37,7 @@ def respond(params):
     addr, key = params.get("address", ""), params.get("key", "")
     calls.append(addr)
     low = addr.lower()
-    if key == "bad-key":
+    if "bad-key" in key:
         return {"status": "REQUEST_DENIED", "error_message": "The provided API key is invalid."}
     if "quota" in low:
         return {"status": "OVER_QUERY_LIMIT", "error_message": "You have exceeded your rate-limit."}

@@ -43,14 +43,14 @@ def make_xlsx(path, sheets):
 def env(tmp_path, monkeypatch):
     monkeypatch.setattr(appmod, "WORK_DIR", str(tmp_path / "work"))
     monkeypatch.setattr(appmod, "CACHE_PATH", str(tmp_path / "work" / "cache.json"))
-    monkeypatch.setenv("GOOGLE_GEOCODING_API_KEY", "test-key")
+    monkeypatch.setitem(appmod.KEY, "value", "test-key")
     fake_google.calls.clear()
     holder = {}
 
     def fake_geo():
         if "geo" not in holder:
             os.makedirs(appmod.WORK_DIR, exist_ok=True)
-            holder["geo"] = g.Geocoder(os.environ["GOOGLE_GEOCODING_API_KEY"], appmod.CACHE_PATH, rps=0,
+            holder["geo"] = g.Geocoder(appmod.KEY["value"], appmod.CACHE_PATH, rps=0,
                                        session=fake_google.FakeSession(), sleep=lambda s: None)
         return holder["geo"]
 
@@ -283,7 +283,7 @@ def test_6_unfound_and_review(env):
 
 
 def test_7_invalid_key(env, monkeypatch):
-    monkeypatch.setenv("GOOGLE_GEOCODING_API_KEY", "bad-key")
+    monkeypatch.setitem(appmod.KEY, "value", "bad-key")
     src = make_xlsx(env.tmp / "c7.xlsx", {"S": (HEAD, ROWS)})
     upload(env, src)
     st = run(env, body_for("S", STD_MAP))
@@ -293,10 +293,27 @@ def test_7_invalid_key(env, monkeypatch):
 
 
 def test_7b_missing_key(env, monkeypatch):
-    monkeypatch.setenv("GOOGLE_GEOCODING_API_KEY", "")
+    monkeypatch.setitem(appmod.KEY, "value", "")
     upload(env, make_xlsx(env.tmp / "c.xlsx", {"S": (HEAD, ROWS)}))
     r = env.post("/api/start", json=body_for("S", STD_MAP))
-    assert r.status_code == 400 and ".env" in r.json["error"]
+    assert r.status_code == 400 and "API key" in r.json["error"]
+
+
+def test_key_entry_in_page(env, monkeypatch):
+    srv = fake_google.serve(8998)
+    monkeypatch.setenv("GEOCODING_API_URL", "http://127.0.0.1:8998/")
+    monkeypatch.setitem(appmod.KEY, "value", "")
+    try:
+        assert env.get("/api/config").json == {"key_configured": False}
+        r = env.post("/api/key", json={"key": "AIza-bad-key-0000000000000"})
+        assert r.status_code == 400 and "REQUEST_DENIED" in r.json["error"] and "AIza" not in r.json["error"]
+        assert env.post("/api/key", json={"key": "short"}).status_code == 400
+        r = env.post("/api/key", json={"key": "AIzaGoodTestKey1234567890"})
+        assert r.json == {"key_configured": True}  # key itself never returned
+        assert appmod.KEY["value"] == "AIzaGoodTestKey1234567890"
+        assert "AIza" not in env.get("/api/config").get_data(as_text=True)
+    finally:
+        srv.shutdown()
 
 
 def test_8_quota_then_resume(env):

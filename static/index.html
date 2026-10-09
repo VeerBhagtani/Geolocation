@@ -9,7 +9,15 @@
 </head>
 <body>
 <h1>Modern Dairy — Customer Geocoding Tool</h1>
-<div id="keyWarning" class="msg error hidden">GOOGLE_GEOCODING_API_KEY is not set. Add it to the <code>.env</code> file and restart the app. You can still upload and map columns.</div>
+<section>
+  <h2>Google API key</h2>
+  <div id="keyEntry">
+    <input type="password" id="apiKey" placeholder="Paste your Geocoding API key (AIza...)" autocomplete="off" style="width:min(420px,100%)">
+    <button id="saveKeyBtn" class="primary">Save key</button>
+    <div class="muted">Kept only in this program's memory — not saved to any file. Re-enter it after restarting the program.</div>
+  </div>
+  <div id="keySaved" class="hidden">✔ API key saved and verified. <button id="changeKeyBtn">Change key</button></div>
+</section>
 <div id="message" class="msg hidden"></div>
 
 <section>

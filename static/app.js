@@ -90,7 +90,7 @@ function updateEstimate() {
         t += `\nApprox. cost at your configured price: ${e.currency} ${e.cost_min}` + (e.cost_max > e.cost_min ? `–${e.cost_max}` : "") +
           (e.free_monthly ? ` before the free monthly allowance of ${e.free_monthly} requests` : "") + ". Verify current pricing in Google Cloud.";
       } else {
-        t += "\nCheck current Geocoding API pricing: https://developers.google.com/maps/billing-and-pricing/pricing (set GEOCODING_PRICE_PER_1000 in .env to show a cost estimate).";
+        t += "\nCheck current Geocoding API pricing: https://developers.google.com/maps/billing-and-pricing/pricing";
       }
       box.textContent = t;
       box.className = "msg info";
@@ -177,4 +177,24 @@ $("filter").onchange = () => rowEls.forEach(applyFilter);
 function clearResults() { rowEls.clear(); $("results").tBodies[0].innerHTML = ""; seq = 0; $("summary").innerHTML = ""; $("bar").style.width = "0"; $("progressText").textContent = ""; }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
-api("/api/config").then((d) => $("keyWarning").classList.toggle("hidden", d.key_configured)).catch(() => {});
+// ---- API key ----
+function showKey(saved) {
+  $("keySaved").classList.toggle("hidden", !saved);
+  $("keyEntry").classList.toggle("hidden", saved);
+}
+$("saveKeyBtn").onclick = async () => {
+  showMsg("");
+  $("saveKeyBtn").disabled = true;
+  $("saveKeyBtn").textContent = "Checking…";
+  try {
+    const d = await post("/api/key", { key: $("apiKey").value });
+    $("apiKey").value = "";
+    showKey(d.key_configured);
+    if (d.key_configured) showMsg("API key works.", "info");
+  } catch (e) { showMsg(e.message); }
+  $("saveKeyBtn").disabled = false;
+  $("saveKeyBtn").textContent = "Save key";
+};
+$("apiKey").addEventListener("keydown", (e) => e.key === "Enter" && $("saveKeyBtn").click());
+$("changeKeyBtn").onclick = () => showKey(false);
+api("/api/config").then((d) => showKey(d.key_configured)).catch(() => {});

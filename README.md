@@ -13,7 +13,6 @@ excel_io.py         Excel reading (.xlsx/.xls) and writing results
 static/             index.html, app.js, style.css (no frameworks)
 tests/              pytest suite + fake Google API (no real key needed)
 run.sh / run.bat    one-click start (macOS-Linux / Windows)
-.env.example        settings template (copy to .env)
 work/               temporary files (created at runtime, git-ignored)
 ```
 
@@ -40,24 +39,21 @@ pip install -r requirements.txt
    - *API restrictions* → **Restrict key** → only **Geocoding API**.
    - *Application restrictions* → **IP addresses** → your public IP (optional but recommended). Do **not** use "Websites" — this key is used server-side only.
 6. Optional: **APIs & Services → Geocoding API → Quotas** → set a daily cap to limit spend.
-7. Copy `.env.example` to `.env` and paste the key:
-   ```
-   GOOGLE_GEOCODING_API_KEY=AIza...
-   ```
-   `.env` is git-ignored. The key is never sent to the browser, logs, or the output file.
+7. Start the tool (step 3) and paste the key into the **Google API key** box at the top of the page → **Save key**. The tool checks it with one test request.
+   The key is kept only in the program's memory — never written to a file, never sent back to the browser, never in logs or output. Re-enter it each time you restart the program.
 
-Pricing changes over time — check [Google Maps pricing](https://developers.google.com/maps/billing-and-pricing/pricing). To see a cost estimate in the app, put the current price in `.env` (`GEOCODING_PRICE_PER_1000=...`).
+Pricing changes over time — check [Google Maps pricing](https://developers.google.com/maps/billing-and-pricing/pricing).
 
 ## 3. Start
 
 ```bash
 ./run.sh                 # macOS / Linux
-run.bat                  # Windows (double-click)
+.\run.bat                # Windows PowerShell (or double-click run.bat)
 # or manually:
 python app.py
 ```
 
-Open **http://127.0.0.1:8765** in your browser.
+Open **http://127.0.0.1:8765** in your browser (run.bat opens it automatically) and enter your API key.
 
 ## 4. Upload and map columns
 
@@ -117,15 +113,16 @@ Notes:
 - Stop the server: `Ctrl+C` in the terminal.
 - To remove everything: delete the `work/` folder (and `.venv/` if you want).
 
-## Settings (`.env`)
+## Optional settings (environment variables)
+
+Not needed for normal use.
 
 | Name | Default | |
 |---|---|---|
-| `GOOGLE_GEOCODING_API_KEY` | — | required |
 | `REQUESTS_PER_SECOND` | 10 | throttle |
 | `GEOCODING_REGION` | `in` | region bias (India) |
 | `PORT` | 8765 | local port |
-| `GEOCODING_PRICE_PER_1000`, `GEOCODING_PRICE_CURRENCY`, `GEOCODING_FREE_REQUESTS_PER_MONTH` | blank | optional cost estimate |
+| `GEOCODING_PRICE_PER_1000`, `GEOCODING_PRICE_CURRENCY`, `GEOCODING_FREE_REQUESTS_PER_MONTH` | blank | show a cost estimate (enter the current Google price) |
 
 ## Tests
 
@@ -139,5 +136,6 @@ Uses a fake Google API (no key, no cost). Covers: complete addresses, different 
 Manual UI test without a real key:
 ```bash
 python tests/fake_google.py 8999 &
-GOOGLE_GEOCODING_API_KEY=dummy GEOCODING_API_URL=http://127.0.0.1:8999/ python app.py
+GEOCODING_API_URL=http://127.0.0.1:8999/ python app.py
+# then enter any key like AIzaTestKey1234567890 in the page
 ```

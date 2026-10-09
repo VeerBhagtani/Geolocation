@@ -224,7 +224,7 @@ class Geocoder:
         if use_cache and k in self.cache:
             return self.cache[k]
         if not self.api_key:
-            raise FatalApiError("GOOGLE_GEOCODING_API_KEY is not set. Add it to the .env file and restart.")
+            raise FatalApiError("No Google API key entered. Enter it at the top of the page.")
 
         params = {"address": query, "key": self.api_key}
         if self.region:
@@ -257,7 +257,7 @@ class Geocoder:
                 return out
             if status in ("REQUEST_DENIED", "OVER_DAILY_LIMIT"):
                 raise FatalApiError(
-                    f"Google rejected the request ({status}). Check that the API key in .env is correct, "
+                    f"Google rejected the request ({status}). Check that the API key is correct, "
                     f"the Geocoding API is enabled and billing is active. Google says: {msg or 'no details'}")
             if status in ("OVER_QUERY_LIMIT", "UNKNOWN_ERROR"):
                 last_err = f"{status}{': ' + msg if msg else ''}"

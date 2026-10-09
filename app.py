@@ -5,7 +5,6 @@ import shutil
 import threading
 import uuid
 
-from dotenv import load_dotenv
 from flask import Flask, jsonify, request, send_file, send_from_directory
 from werkzeug.utils import secure_filename
 
@@ -13,11 +12,12 @@ import excel_io
 import geocoder as g
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 WORK_DIR = os.environ.get("WORK_DIR") or os.path.join(BASE_DIR, "work")
 CACHE_PATH = os.path.join(WORK_DIR, "geocode_cache.json")
 FIELDS = ["name", "address", "city", "state", "pin", "country"]
+# Google key: entered in the web page, kept only in this process's memory (never written to disk)
+KEY = {"value": os.environ.get("GOOGLE_GEOCODING_API_KEY", "").strip()}
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 # Never let HTTP debug logs print request URLs (they contain the API key and addresses)
@@ -74,12 +74,13 @@ def get_geocoder():
     if S.geo is None:
         os.makedirs(WORK_DIR, exist_ok=True)
         S.geo = g.Geocoder(
-            api_key=os.environ.get("GOOGLE_GEOCODING_API_KEY", "").strip(),
+            api_key=KEY["value"],
             cache_path=CACHE_PATH,
             rps=_float_env("REQUESTS_PER_SECOND", 10.0),
             region=os.environ.get("GEOCODING_REGION", "in").strip(),
             api_url=os.environ.get("GEOCODING_API_URL") or None,
         )
+    S.geo.api_key = KEY["value"]
     return S.geo
 
 
@@ -258,7 +259,31 @@ def index():
 
 @app.get("/api/config")
 def api_config():
-    return jsonify({"key_configured": bool(os.environ.get("GOOGLE_GEOCODING_API_KEY", "").strip())})
+    return jsonify({"key_configured": bool(KEY["value"])})
+
+
+@app.post("/api/key")
+def api_key():
+    """Check the key with one test request, then keep it in memory. The key is never sent back."""
+    if S.running():
+        return err("Processing is running. Stop it first.")
+    key = ((request.get_json(silent=True) or {}).get("key") or "").strip()
+    if not key:
+        KEY["value"] = ""
+        return jsonify({"key_configured": False})
+    if len(key) < 20 or any(c.isspace() for c in key):
+        return err("That doesn't look like a Google API key (they start with AIza and have no spaces).")
+    test = g.Geocoder(key, rps=0, max_retries=1, region=os.environ.get("GEOCODING_REGION", "in").strip(),
+                      api_url=os.environ.get("GEOCODING_API_URL") or None)
+    try:
+        resp = test.lookup("Pune, Maharashtra, India", use_cache=False)
+    except g.FatalApiError as e:
+        return err(str(e))
+    if resp["status"] not in ("OK", "ZERO_RESULTS"):
+        return err("Could not verify the key: " + resp.get("error", resp["status"]))
+    KEY["value"] = key
+    log.info("API key verified and set (memory only)")
+    return jsonify({"key_configured": True})
 
 
 @app.post("/api/upload")
@@ -330,8 +355,8 @@ def api_start():
         return err("Upload a file first.")
     if S.running():
         return err("Already running.")
-    if not os.environ.get("GOOGLE_GEOCODING_API_KEY", "").strip():
-        return err("GOOGLE_GEOCODING_API_KEY is not set. Add it to the .env file and restart the app.")
+    if not KEY["value"]:
+        return err("Enter your Google Geocoding API key at the top of the page first.")
     body = request.get_json(force=True)
     try:
         cfg = parse_config(body)
