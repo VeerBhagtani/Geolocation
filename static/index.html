@@ -62,6 +62,22 @@
   <div id="summary" class="summary"></div>
 </section>
 
+<section id="mapSec" class="hidden">
+  <h2>4. Check on Google Maps</h2>
+  <div id="mapKeyEntry">
+    <input type="password" id="mapsKey" placeholder="Maps JavaScript API key (AIza...)" autocomplete="off" style="width:min(420px,100%)">
+    <button id="loadMapBtn" class="primary">Load map</button>
+    <div class="muted">A browser key for the <b>Maps JavaScript API</b>, restricted to website <code>http://127.0.0.1:8765/*</code>. Not saved anywhere.</div>
+  </div>
+  <div id="mapTools" class="hidden">
+    <button id="fileMapBtn">Show coordinates already in this file</button>
+    <span class="legend"><i style="background:#1a7f37"></i>Precise <i style="background:#d29922"></i>Approximate
+      <i style="background:#cf222e"></i>Review / not found <i style="background:#6e7781"></i>Skipped (existing) <i style="background:#1f6feb"></i>From file</span>
+    <div class="muted">Click a pin for details. Click a row in the results table to find it on the map. The "Show" filter below also filters the map.</div>
+  </div>
+  <div id="map" class="hidden"></div>
+</section>
+
 <section id="resultsSec" class="hidden">
   <h2>Results</h2>
   <label>Show <select id="filter">
@@ -73,11 +89,12 @@
     <option value="API_ERROR">API error</option>
     <option value="MISSING_ADDRESS">Missing address</option>
     <option value="SKIPPED_EXISTING">Skipped (existing)</option>
+    <option value="FROM_FILE">From file</option>
   </select></label>
   <div class="tablewrap tall">
     <table id="results">
       <thead><tr><th>Row</th><th>Customer name</th><th>Original address</th><th>Latitude</th><th>Longitude</th>
-        <th>Matched address</th><th>Accuracy type</th><th>Status</th><th>Note</th></tr></thead>
+        <th>Matched address</th><th>Accuracy type</th><th>Status</th><th>Note</th><th>Google Maps</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>

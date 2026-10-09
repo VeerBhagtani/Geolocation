@@ -30,3 +30,9 @@ th { position: sticky; top: 0; background: var(--bg); }
 td.s-SUCCESS_PRECISE { color: #1a7f37; }
 td.s-SUCCESS_APPROXIMATE { color: #9a6700; }
 td.s-REVIEW_REQUIRED, td.s-NOT_FOUND, td.s-API_ERROR, td.s-MISSING_ADDRESS { color: var(--err); font-weight: 600; }
+#map { height: 600px; border: 1px solid var(--border); border-radius: 6px; margin-top: 8px; }
+.legend { margin-left: 8px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 4px 0 10px; }
+#results tbody tr { cursor: pointer; }
+.info { color: #1d1d1f; font-size: 13px; max-width: 320px; }
+.info b { display: block; margin-bottom: 4px; }

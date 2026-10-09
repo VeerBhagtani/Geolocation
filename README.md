@@ -107,6 +107,20 @@ Notes:
 - Old `.xls` files: values are kept, but cell formatting cannot be carried over (output is `.xlsx`).
 - openpyxl may drop charts/images/pivot tables in the processed workbook; cell data, formulas, styles, widths and sheet names are kept.
 
+## Check results on Google Maps
+
+**Without a key:** every row in the results table has an **Open** link → opens that coordinate in Google Maps.
+
+**Map inside the tool** (needs a second, browser key):
+1. Google Cloud → **APIs & Services → Library** → enable **Maps JavaScript API**.
+2. **Credentials → Create credentials → API key**. Edit it:
+   - *Application restrictions* → **Websites** → add `http://127.0.0.1:8765/*`
+   - *API restrictions* → **Maps JavaScript API** only.
+   (This key is visible to the browser by design, so these restrictions are what protect it. Keep it separate from the Geocoding key.)
+3. In the tool, section **4. Check on Google Maps** → paste the key → **Load map**.
+4. Pins: green = precise, amber = approximate, red = review/not found, grey = skipped (existing). Click a pin for your address vs Google's match. Click a table row to jump to it. The **Show** filter also filters the map.
+5. To check a file you downloaded earlier: upload the `_geocoded.xlsx`, make sure **Existing Latitude/Longitude** are selected, then **Show coordinates already in this file** (no geocoding requests).
+
 ## 7. Stop and clean up
 
 - Click **Clear session & temp files** → deletes the uploaded copy, outputs and the cache in `work/`.

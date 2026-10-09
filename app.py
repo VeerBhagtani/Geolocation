@@ -106,10 +106,10 @@ def parse_config(body):
 
 def load_sheet(cfg):
     if S.data is None or S.data.sheet != cfg["sheet"] or (
-            cfg["header_row"] and S.data.header_row != cfg["header_row"]):
+            cfg.get("header_row") and S.data.header_row != cfg["header_row"]):
         if cfg["sheet"] not in S.sheets:
             raise ValueError("Unknown worksheet.")
-        S.data = excel_io.SheetData(S.file_path, cfg["sheet"], cfg["header_row"])
+        S.data = excel_io.SheetData(S.file_path, cfg["sheet"], cfg.get("header_row"))
     return S.data
 
 
@@ -378,6 +378,43 @@ def api_start():
         S.thread = threading.Thread(target=worker, args=(todo, cfg, mode != "retry"), daemon=True)
         S.thread.start()
     return jsonify({"started": True, "total": len(todo)})
+
+
+@app.post("/api/mapdata")
+def api_mapdata():
+    """Rows with coordinates from the uploaded file itself (e.g. a file this tool produced earlier).
+    No Google requests are made."""
+    if not S.file_path:
+        return err("Upload a file first.")
+    body = request.get_json(force=True)
+    m = {f: (int(v) if v not in (None, "", -1, "-1") else None)
+         for f, v in (body.get("mapping") or {}).items()}
+    if m.get("lat") is None or m.get("lng") is None:
+        return err("Select the Latitude and Longitude columns (under 'Existing Latitude/Longitude') to show this file on the map.")
+    try:
+        data = load_sheet({"sheet": body.get("sheet"), "header_row": int(body.get("header_row") or 0) or None})
+    except ValueError as e:
+        return err(str(e))
+    lower = [h.strip().lower() for h in data.headers]
+    extra = {k: (lower.index(h) if h in lower else None) for k, h in
+             (("status", "geocoding_status"), ("matched", "matched_address"),
+              ("loc_type", "location_type"), ("note", "geocoding_note"))}
+
+    def val(vals, i):
+        return vals[i] if i is not None and i < len(vals) else None
+
+    out, missing = [], 0
+    for excel_row, vals in data.rows:
+        lat, lng = val(vals, m["lat"]), val(vals, m["lng"])
+        if not g.valid_coords(lat, lng):
+            missing += 1
+            continue
+        parts = {f: val(vals, m.get(f)) for f in ("address", "city", "state", "pin")}
+        out.append({"row": excel_row, "name": g.clean(val(vals, m.get("name"))),
+                    "address": g.build_address(parts), "lat": float(lat), "lng": float(lng),
+                    **{k: (g.clean(val(vals, i)) or None) for k, i in extra.items()}})
+        out[-1]["status"] = out[-1]["status"] or "FROM_FILE"
+    return jsonify({"rows": out, "without_coords": missing})
 
 
 @app.post("/api/stop")

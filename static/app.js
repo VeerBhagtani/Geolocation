@@ -2,9 +2,15 @@ const $ = (id) => document.getElementById(id);
 const LABELS = {
   SUCCESS_PRECISE: "Precise", SUCCESS_APPROXIMATE: "Approximate", REVIEW_REQUIRED: "Review required",
   NOT_FOUND: "Not found", API_ERROR: "API error", MISSING_ADDRESS: "Missing address", SKIPPED_EXISTING: "Skipped (existing)",
+  FROM_FILE: "From file",
+};
+const COLORS = {
+  SUCCESS_PRECISE: "#1a7f37", SUCCESS_APPROXIMATE: "#d29922", REVIEW_REQUIRED: "#cf222e", NOT_FOUND: "#cf222e",
+  API_ERROR: "#cf222e", SKIPPED_EXISTING: "#6e7781", FROM_FILE: "#1f6feb",
 };
 let headers = [], seq = 0, generation = null, polling = null, estTimer = null;
-const rowEls = new Map();
+const rowEls = new Map(), rowData = new Map(), markers = new Map();
+let gmap = null, info = null, AdvMarker = null, Pin = null;
 
 function showMsg(text, kind = "error") {
   const m = $("message");
@@ -46,7 +52,7 @@ $("file").addEventListener("change", async () => {
     clearResults();
     $("headerRow").value = "";
     await loadPreview();
-    ["setup", "run"].forEach((id) => $(id).classList.remove("hidden"));
+    ["setup", "run", "mapSec"].forEach((id) => $(id).classList.remove("hidden"));
   } catch (e) { $("uploadInfo").textContent = ""; showMsg(e.message); }
 });
 
@@ -167,14 +173,106 @@ function renderRow(r) {
   if (!tr) { tr = document.createElement("tr"); rowEls.set(r.row, tr); $("results").tBodies[0].appendChild(tr); }
   const num = (v) => (v === null || v === undefined ? "" : (+v).toFixed(7));
   tr.dataset.status = r.status;
+  tr.dataset.row = r.row;
   tr.innerHTML = [r.row, r.name, r.address, num(r.lat), num(r.lng), r.matched, r.loc_type].map((v) => `<td>${esc(v ?? "")}</td>`).join("") +
-    `<td class="s-${r.status}">${esc(r.status)}</td><td>${esc(r.note ?? "")}</td>`;
+    `<td class="s-${r.status}">${esc(r.status)}</td><td>${esc(r.note ?? "")}</td><td>${hasCoords(r) ? gmapsLink(r) : ""}</td>`;
+  rowData.set(r.row, r);
   applyFilter(tr);
+  if (gmap) setMarker(r);
 }
-const applyFilter = (tr) => { const f = $("filter").value; tr.classList.toggle("hidden", !!f && tr.dataset.status !== f); };
-$("filter").onchange = () => rowEls.forEach(applyFilter);
+const hasCoords = (r) => r.lat !== null && r.lat !== undefined && r.lng !== null && r.lng !== undefined;
+const gmapsLink = (r) => `<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Open</a>`;
+const shown = (status) => { const f = $("filter").value; return !f || status === f; };
+const applyFilter = (tr) => tr.classList.toggle("hidden", !shown(tr.dataset.status));
+$("filter").onchange = () => {
+  rowEls.forEach(applyFilter);
+  markers.forEach((m, row) => (m.map = shown(rowData.get(row).status) ? gmap : null));
+};
 
-function clearResults() { rowEls.clear(); $("results").tBodies[0].innerHTML = ""; seq = 0; $("summary").innerHTML = ""; $("bar").style.width = "0"; $("progressText").textContent = ""; }
+// ---- Google map ----
+$("loadMapBtn").onclick = () => {
+  const key = $("mapsKey").value.trim();
+  if (!key) return showMsg("Enter your Maps JavaScript API key.");
+  if (window.google?.maps) return initMap();
+  window.gm_authFailure = () => showMsg("Google rejected the Maps key. Check that the Maps JavaScript API is enabled, billing is on, " +
+    "and the key's website restriction includes http://127.0.0.1:8765/*");
+  window.initMap = initMap;
+  const sc = document.createElement("script");
+  sc.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&loading=async&callback=initMap&v=weekly`;
+  sc.onerror = () => showMsg("Could not load Google Maps. Check your internet connection.");
+  document.head.appendChild(sc);
+  $("mapsKey").value = "";
+};
+
+async function initMap() {
+  try {
+    const { Map: GMap, InfoWindow } = await google.maps.importLibrary("maps");
+    ({ AdvancedMarkerElement: AdvMarker, PinElement: Pin } = await google.maps.importLibrary("marker"));
+    gmap = new GMap($("map"), { center: { lat: 18.5204, lng: 73.8567 }, zoom: 11, mapId: "DEMO_MAP_ID" });
+    info = new InfoWindow();
+  } catch (e) { showMsg("Could not start Google Maps: " + e.message); return; }
+  ["mapKeyEntry"].forEach((id) => $(id).classList.add("hidden"));
+  ["mapTools", "map"].forEach((id) => $(id).classList.remove("hidden"));
+  rowData.forEach(setMarker);
+  fitMap();
+}
+
+function setMarker(r) {
+  let m = markers.get(r.row);
+  if (!hasCoords(r)) { if (m) { m.map = null; markers.delete(r.row); } return; }
+  const pin = new Pin({ background: COLORS[r.status] || "#1f6feb", borderColor: "#ffffff", glyphColor: "#ffffff", scale: 0.8 });
+  if (!m) {
+    m = new AdvMarker({ map: null, gmpClickable: true });
+    m.addListener("click", () => openInfo(m.rowNum));
+    markers.set(r.row, m);
+  }
+  m.rowNum = r.row;
+  m.position = { lat: +r.lat, lng: +r.lng };
+  m.title = `${r.name || "Row " + r.row}`;
+  m.content = pin.element;
+  m.map = shown(r.status) ? gmap : null;
+}
+
+function openInfo(row) {
+  const r = rowData.get(row), m = markers.get(row);
+  if (!r || !m) return;
+  info.setContent(`<div class="info"><b>${esc(r.name || "(no name)")}</b>Row ${r.row} · <span class="s-${r.status}">${esc(LABELS[r.status] || r.status)}</span>` +
+    `<br><br><u>Your address:</u> ${esc(r.address || "-")}<br><u>Google matched:</u> ${esc(r.matched || "-")}` +
+    `<br><u>Accuracy:</u> ${esc(r.loc_type || "-")}${r.note ? `<br><u>Note:</u> ${esc(r.note)}` : ""}` +
+    `<br>${(+r.lat).toFixed(6)}, ${(+r.lng).toFixed(6)} · ${gmapsLink(r)}</div>`);
+  info.open({ anchor: m, map: gmap });
+}
+
+function fitMap() {
+  const pts = [...markers.values()].filter((m) => m.map).map((m) => m.position);
+  if (!pts.length) return;
+  const b = new google.maps.LatLngBounds();
+  pts.forEach((p) => b.extend(p));
+  gmap.fitBounds(b);
+  if (pts.length === 1) gmap.setZoom(16);
+}
+
+$("results").addEventListener("click", (e) => {
+  const tr = e.target.closest("tr[data-row]");
+  if (!tr || e.target.tagName === "A" || !gmap) return;
+  const row = +tr.dataset.row, m = markers.get(row);
+  if (!m) return showMsg("This row has no coordinates.", "info");
+  gmap.panTo(m.position); gmap.setZoom(17); openInfo(row);
+  $("map").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+
+$("fileMapBtn").onclick = async () => {
+  showMsg("");
+  try {
+    const d = await post("/api/mapdata", config());
+    clearResults();
+    d.rows.forEach(renderRow);
+    fitMap();
+    showMsg(`Loaded ${d.rows.length} rows with coordinates from the file` + (d.without_coords ? ` (${d.without_coords} rows have none).` : "."), "info");
+  } catch (e) { showMsg(e.message); }
+};
+
+function clearResults() { markers.forEach((m) => (m.map = null)); markers.clear(); rowData.clear(); rowEls.clear(); $("results").tBodies[0].innerHTML = ""; seq = 0; $("summary").innerHTML = ""; $("bar").style.width = "0"; $("progressText").textContent = ""; }
 function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 // ---- API key ----

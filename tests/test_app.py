@@ -414,3 +414,23 @@ def test_bad_upload(env):
     assert r.status_code == 400 and "Traceback" not in r.json["error"]
     r = env.post("/api/upload", data={"file": (io.BytesIO(b"a,b"), "x.csv")})
     assert r.status_code == 400
+
+
+def test_mapdata_from_geocoded_file(env):
+    # Geocode, download, then re-upload the output and read its coordinates for the map (no API calls)
+    upload(env, make_xlsx(env.tmp / "m.xlsx", {"S": (HEAD, ROWS)}))
+    run(env, body_for("S", STD_MAP))
+    download(env, env.tmp / "m_geocoded.xlsx")
+    fake_google.calls.clear()
+    upload(env, env.tmp / "m_geocoded.xlsx")
+    pv = preview(env, "S")
+    assert pv["guess"]["lat"] == 7 and pv["guess"]["lng"] == 8
+    r = env.post("/api/mapdata", json={"sheet": "S", "mapping": pv["guess"]})
+    assert r.status_code == 200, r.json
+    rows = r.json["rows"]
+    assert [x["row"] for x in rows] == [2, 3] and r.json["without_coords"] == 1
+    assert rows[0]["status"] == g.PRECISE and rows[0]["name"] == "Cafe Mocha"
+    assert rows[0]["matched"].startswith("Matched:") and rows[0]["loc_type"] == "ROOFTOP"
+    assert fake_google.calls == []
+    r = env.post("/api/mapdata", json={"sheet": "S", "mapping": {"name": 1}})
+    assert r.status_code == 400 and "Latitude" in r.json["error"]
