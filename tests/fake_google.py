@@ -6,6 +6,10 @@ Behaviour is keyed on words in the address:
   street  -> RANGE_INTERPOLATED  only city/PIN -> locality centre (APPROXIMATE)
   anything else with a street address -> ROOFTOP premise at a coordinate derived from the text
 Key "bad-key" -> REQUEST_DENIED.
+
+Places Text Search (POST): business named like the first part of textQuery, placed at the
+location-bias centre (+~20 m). Name words: "Mismatch" -> different business, "Far" -> 2 km away,
+"Closed" -> permanently closed, "Ghost" -> no results. Key "noplaces-key" -> 403.
 """
 import hashlib
 import json
@@ -62,9 +66,35 @@ def respond(params):
     return {"status": "OK", "results": [_result(addr, lat, lng, "ROOFTOP", ["premise"], postal)]}
 
 
+places_calls = []
+
+
+def respond_places(body, key):
+    """Returns (http_code, json)."""
+    q = body.get("textQuery", "")
+    places_calls.append(q)
+    if "noplaces-key" in key or "bad-key" in key:
+        return 403, {"error": {"code": 403, "message": "Places API (New) has not been used in project 1 before or it is disabled.",
+                               "status": "PERMISSION_DENIED"}}
+    name = q.split(",")[0].strip()
+    if "Ghost" in name:
+        return 200, {}
+    c = (body.get("locationBias") or {}).get("circle", {}).get("center")
+    lat, lng = (c["latitude"] + 0.0002, c["longitude"]) if c else _coord(q.lower())
+    if "Far" in name:
+        lat += 0.018
+    shown = "Totally Different Sweets" if "Mismatch" in name else name + " Pure Veg"
+    return 200, {"places": [{
+        "id": "BIZ_" + hashlib.md5(q.encode()).hexdigest()[:8], "displayName": {"text": shown, "languageCode": "en"},
+        "formattedAddress": f"{shown}, Business Road, Pune 411001", "location": {"latitude": lat, "longitude": lng},
+        "businessStatus": "CLOSED_PERMANENTLY" if "Closed" in name else "OPERATIONAL",
+        "googleMapsUri": "https://maps.google.com/?cid=123"}]}
+
+
 class FakeResponse:
     def __init__(self, data, code=200):
         self._d, self.status_code = data, code
+        self.content = b"x"
 
     def json(self):
         return self._d
@@ -73,6 +103,10 @@ class FakeResponse:
 class FakeSession:
     def get(self, url, params=None, timeout=None):
         return FakeResponse(respond(params or {}))
+
+    def post(self, url, json=None, headers=None, timeout=None):
+        code, data = respond_places(json or {}, (headers or {}).get("X-Goog-Api-Key", ""))
+        return FakeResponse(data, code)
 
 
 class _Handler(BaseHTTPRequestHandler):
@@ -83,6 +117,15 @@ class _Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(body)
+
+    def do_POST(self):
+        body = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))) or b"{}")
+        code, data = respond_places(body, self.headers.get("X-Goog-Api-Key", ""))
+        out = json.dumps(data).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(out)
 
     def log_message(self, *a):
         pass

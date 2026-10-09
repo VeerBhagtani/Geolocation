@@ -271,3 +271,133 @@ class Geocoder:
                 "paused; completed rows are kept. Wait (or raise the quota in Google Cloud) and click "
                 "Start Geocoding again to resume.")
         return {"status": "API_ERROR", "results": [], "error": last_err or "Unknown error"}
+
+    def places_search(self, text, lat=None, lng=None, use_cache=True):
+        """Text Search (New). Returns {'status': 'OK'|'ZERO_RESULTS'|'ERROR', 'places': [...], 'error': str}."""
+        bias = f"{lat:.3f},{lng:.3f}" if lat is not None and lng is not None else ""
+        k = "places|" + self.key(text) + "|" + bias
+        if use_cache and k in self.cache:
+            return self.cache[k]
+        if not self.api_key:
+            raise FatalApiError("No Google API key entered. Enter it at the top of the page.")
+        body = {"textQuery": text, "pageSize": 3}
+        if self.region:
+            body["regionCode"] = self.region.upper()
+        if bias:
+            body["locationBias"] = {"circle": {"center": {"latitude": lat, "longitude": lng}, "radius": 3000.0}}
+        headers = {"X-Goog-Api-Key": self.api_key, "X-Goog-FieldMask": PLACES_FIELDS}
+        url = os.environ.get("PLACES_API_URL") or DEFAULT_PLACES_URL
+        last_err = ""
+        for attempt in range(self.max_retries + 1):
+            if attempt:
+                self.sleep(min(2 ** attempt, 30))
+            with self._lock:
+                self._throttle()
+                self.requests_made += 1
+            try:
+                resp = self.session.post(url, json=body, headers=headers, timeout=20)
+                data = resp.json() if resp.content else {}
+            except requests.RequestException as e:
+                last_err = f"Network error ({type(e).__name__})"
+                continue
+            except ValueError:
+                last_err = f"Invalid response (HTTP {resp.status_code})"
+                continue
+            code = resp.status_code
+            msg = (data.get("error") or {}).get("message", "") if isinstance(data, dict) else ""
+            if code == 200:
+                places = [{
+                    "id": p.get("id"), "name": (p.get("displayName") or {}).get("text", ""),
+                    "address": p.get("formattedAddress", ""),
+                    "lat": (p.get("location") or {}).get("latitude"), "lng": (p.get("location") or {}).get("longitude"),
+                    "business_status": p.get("businessStatus"), "uri": p.get("googleMapsUri"),
+                } for p in data.get("places", [])]
+                out = {"status": "OK" if places else "ZERO_RESULTS", "places": places}
+                self.cache[k] = out
+                return out
+            if code in (401, 403):
+                raise FatalApiError(
+                    "Google refused the name check (Places API). In Google Cloud: enable 'Places API (New)', and if "
+                    "your key has API restrictions, add 'Places API (New)' to them. Google says: " + (msg or f"HTTP {code}"))
+            if code == 429 or code >= 500:
+                last_err = f"HTTP {code}{': ' + msg if msg else ''}"
+                continue
+            return {"status": "ERROR", "places": [], "error": f"HTTP {code}{': ' + msg if msg else ''}"}
+        if last_err.startswith("HTTP 429"):
+            raise FatalApiError("Google Places quota / rate limit exceeded. Name checks paused; finished rows are kept. "
+                                "Wait, then click 'Verify names' again to continue.")
+        return {"status": "ERROR", "places": [], "error": last_err or "Unknown error"}
+
+
+# ---------- Business-name verification (Places API "Text Search (New)") ----------
+
+DEFAULT_PLACES_URL = "https://places.googleapis.com/v1/places:searchText"
+PLACES_FIELDS = ("places.id,places.displayName,places.formattedAddress,places.location,"
+                 "places.businessStatus,places.googleMapsUri")
+
+V_OK = "NAME_VERIFIED"            # Google listing with this name at/near our coordinates
+V_FAR = "NAME_VERIFIED_FAR"       # name matches, but the listing is far from our coordinates
+V_MISMATCH = "NAME_MISMATCH"      # Google's nearest listing has a different name
+V_NONE = "NO_BUSINESS_FOUND"
+V_CLOSED = "BUSINESS_CLOSED"
+V_ERR = "VERIFY_ERROR"
+
+NAME_MATCH_MIN = 70   # % similarity to accept a name
+NEAR_M = 300          # max metres between geocode and listing to call it "same place"
+
+# Generic words that shouldn't decide whether two business names match
+NAME_STOPWORDS = {
+    "the", "and", "of", "restaurant", "restaurants", "restro", "resto", "hotel", "hotels", "cafe", "caf",
+    "bar", "kitchen", "foods", "food", "family", "veg", "pure", "pvt", "ltd", "private", "limited", "llp",
+    "co", "company", "dhaba", "eatery", "bistro", "lounge", "n", "s",
+}
+
+
+def _name_tokens(s):
+    toks = norm(s.replace("&", " and ")).split()
+    core = [t for t in toks if t not in NAME_STOPWORDS]
+    return core or toks
+
+
+def name_score(sheet_name, google_name):
+    """0-100 similarity between our customer name and Google's business name."""
+    from difflib import SequenceMatcher
+    a, b = _name_tokens(sheet_name), _name_tokens(google_name)
+    if not a or not b:
+        return 0
+    seq = SequenceMatcher(None, " ".join(a), " ".join(b)).ratio()
+    sa, sb = set(a), set(b)
+    shared = sa & sb
+    # "Shreyas" vs "Shreyas Pure Veg" counts as a match, but not a lone short word like "Sai" or "Om"
+    contain = len(shared) / min(len(sa), len(sb)) if sum(map(len, shared)) >= 5 else 0
+    return round(100 * max(seq, contain))
+
+
+def distance_m(lat1, lng1, lat2, lng2):
+    return round(1000 * _distance_km({"lat": lat1, "lng": lng1}, {"lat": lat2, "lng": lng2}))
+
+
+def verify_name(places, sheet_name, lat=None, lng=None):
+    """Pick the best Google listing for this customer and judge it."""
+    if not places:
+        return {"v_status": V_NONE, "v_note": "No Google business listing found for this name"}
+    scored = []
+    for p in places:
+        d = distance_m(lat, lng, p["lat"], p["lng"]) if lat is not None and p.get("lat") is not None else None
+        scored.append((name_score(sheet_name, p["name"]), -(d if d is not None else 0), d, p))
+    score, _, d, p = max(scored, key=lambda x: (x[0] >= NAME_MATCH_MIN, x[1] if x[0] >= NAME_MATCH_MIN else x[0], x[0]))
+    out = {"place_name": p["name"], "place_address": p["address"], "place_lat": p.get("lat"),
+           "place_lng": p.get("lng"), "place_uri": p.get("uri"), "place_ref": p.get("id"),
+           "name_score": score, "distance_m": d}
+    where = f", {d} m from the geocoded point" if d is not None else ""
+    if p.get("business_status") == "CLOSED_PERMANENTLY" and score >= NAME_MATCH_MIN:
+        out.update(v_status=V_CLOSED, v_note=f"Google lists '{p['name']}' as permanently closed")
+    elif score < NAME_MATCH_MIN:
+        out.update(v_status=V_MISMATCH, v_note=f"Closest Google listing is '{p['name']}' ({score}% name match{where})")
+    elif d is not None and d > NEAR_M:
+        out.update(v_status=V_FAR, v_note=f"'{p['name']}' found {d} m away from the geocoded point - "
+                                          "the coordinates may be wrong")
+    else:
+        out.update(v_status=V_OK, v_note=f"Google listing '{p['name']}' matches ({score}%{where})")
+    return out
+

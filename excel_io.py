@@ -132,7 +132,7 @@ class SheetData:
         }
 
 
-def write_output(src_path, dst_path, sheet, header_row, results, lat_col=None, lng_col=None):
+def write_output(src_path, dst_path, sheet, header_row, results, lat_col=None, lng_col=None, extra_cols=()):
     """Copy the workbook and write results into the chosen sheet.
 
     results: {excel_row: {"lat", "lng", "status", "matched", "loc_type", "place_id", "note"}}
@@ -157,11 +157,13 @@ def write_output(src_path, dst_path, sheet, header_row, results, lat_col=None, l
         if style_src is not None and style_src.has_style:
             c.font, c.fill, c.border, c.alignment = (copy(style_src.font), copy(style_src.fill),
                                                      copy(style_src.border), copy(style_src.alignment))
-        ws.column_dimensions[get_column_letter(last_col)].width = 40 if name == "Matched_Address" else 18
+        ws.column_dimensions[get_column_letter(last_col)].width = 40 if "Address" in name or "Note" in name else 18
         return last_col
 
     cols = {"lat": col_for("Latitude", lat_col), "lng": col_for("Longitude", lng_col)}
     for name in OUTPUT_COLUMNS:
+        cols[name] = col_for(name, None)
+    for name, _key in extra_cols:
         cols[name] = col_for(name, None)
 
     for row, res in results.items():
@@ -175,6 +177,11 @@ def write_output(src_path, dst_path, sheet, header_row, results, lat_col=None, l
         ws.cell(row=row, column=cols["Location_Type"], value=res.get("loc_type") or None)
         ws.cell(row=row, column=cols["Place_ID"], value=res.get("place_id") or None)
         ws.cell(row=row, column=cols["Geocoding_Note"], value=res.get("note") or None)
+        for name, key in extra_cols:
+            v = res.get(key)
+            c = ws.cell(row=row, column=cols[name], value=v if v not in ("", None) else None)
+            if name == "Google_Maps_Link" and v:
+                c.hyperlink = v
 
     os.makedirs(os.path.dirname(dst_path) or ".", exist_ok=True)
     wb.save(dst_path)

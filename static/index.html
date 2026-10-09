@@ -55,11 +55,14 @@
   <button id="startBtn" class="primary">Start Geocoding</button>
   <button id="stopBtn" disabled>Stop</button>
   <button id="retryBtn" disabled>Retry failed / review rows</button>
+  <button id="verifyBtn" disabled title="Look up each customer's name on Google (Places API) and compare">Verify names with Google</button>
+  <button id="usePlaceBtn" class="hidden"></button>
   <button id="downloadBtn" disabled>Download Updated Excel</button>
   <button id="clearBtn" class="danger">Clear session &amp; temp files</button>
   <div class="progress"><div id="bar"></div></div>
   <div id="progressText" class="muted"></div>
   <div id="summary" class="summary"></div>
+  <div id="vsummary" class="summary"></div>
 </section>
 
 <section id="mapSec" class="hidden">
@@ -72,7 +75,7 @@
   <div id="mapTools" class="hidden">
     <button id="fileMapBtn">Show coordinates already in this file</button>
     <span class="legend"><i style="background:#1a7f37"></i>Precise <i style="background:#d29922"></i>Approximate
-      <i style="background:#cf222e"></i>Review / not found <i style="background:#6e7781"></i>Skipped (existing) <i style="background:#1f6feb"></i>From file</span>
+      <i style="background:#cf222e"></i>Review / not found <i style="background:#6e7781"></i>Skipped (existing) <i style="background:#1f6feb"></i>From file · ✓ name verified · ! name problem</span>
     <div class="muted">Click a pin for details. Click a row in the results table to find it on the map. The "Show" filter below also filters the map.</div>
   </div>
   <div id="map" class="hidden"></div>
@@ -90,11 +93,19 @@
     <option value="MISSING_ADDRESS">Missing address</option>
     <option value="SKIPPED_EXISTING">Skipped (existing)</option>
     <option value="FROM_FILE">From file</option>
+    <optgroup label="Name check">
+      <option value="v:NAME_VERIFIED">Name verified</option>
+      <option value="v:NAME_VERIFIED_FAR">Name found, but far away</option>
+      <option value="v:NAME_MISMATCH">Different business at Google</option>
+      <option value="v:NO_BUSINESS_FOUND">No business found</option>
+      <option value="v:BUSINESS_CLOSED">Business closed</option>
+      <option value="v:VERIFY_ERROR">Name check error</option>
+    </optgroup>
   </select></label>
   <div class="tablewrap tall">
     <table id="results">
       <thead><tr><th>Row</th><th>Customer name</th><th>Original address</th><th>Latitude</th><th>Longitude</th>
-        <th>Matched address</th><th>Accuracy type</th><th>Status</th><th>Note</th><th>Google Maps</th></tr></thead>
+        <th>Matched address</th><th>Accuracy type</th><th>Status</th><th>Note</th><th>Google business check</th><th>Links</th></tr></thead>
       <tbody></tbody>
     </table>
   </div>

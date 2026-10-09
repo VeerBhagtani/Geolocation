@@ -16,6 +16,13 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 WORK_DIR = os.environ.get("WORK_DIR") or os.path.join(BASE_DIR, "work")
 CACHE_PATH = os.path.join(WORK_DIR, "geocode_cache.json")
 FIELDS = ["name", "address", "city", "state", "pin", "country"]
+VERIFY_KEYS = ("v_status", "v_note", "place_name", "place_address", "name_score", "distance_m",
+               "place_lat", "place_lng", "place_uri")
+# (Excel header, result key) for the name-check columns
+VERIFY_COLUMNS = [("Name_Check", "v_status"), ("Google_Business_Name", "place_name"),
+                  ("Google_Business_Address", "place_address"), ("Name_Match_Pct", "name_score"),
+                  ("Distance_To_Business_m", "distance_m"), ("Google_Maps_Link", "place_uri"),
+                  ("Name_Check_Note", "v_note")]
 # Google key: entered in the web page, kept only in this process's memory (never written to disk)
 KEY = {"value": os.environ.get("GOOGLE_GEOCODING_API_KEY", "").strip()}
 
@@ -150,6 +157,8 @@ def build_rows(cfg):
 def estimate(cfg, rows, results, mode="all"):
     geo = get_geocoder()
     todo = rows_to_process(rows, results, mode)
+    if mode == "verify":
+        return {"to_process": len(todo)}
     skipped = sum(1 for r in rows if cfg["skip_existing"] and r["existing"])
     missing = sum(1 for r in rows if not r["queries"])
     use_cache = mode == "all"
@@ -178,6 +187,9 @@ def estimate(cfg, rows, results, mode="all"):
 
 
 def rows_to_process(rows, results, mode):
+    if mode == "verify":  # name check: geocoded rows with a name, not yet checked
+        return [r for r in rows if r["name"] and r["row"] in results and results[r["row"]]["status"] != g.MISSING
+                and results[r["row"]].get("v_status") in (None, g.V_ERR)]
     if mode == "retry":
         return [r for r in rows if results.get(r["row"], {}).get("status") in (g.API_ERROR, g.NOT_FOUND, g.REVIEW)]
     return [r for r in rows if r["row"] not in results]
@@ -214,6 +226,21 @@ def geocode_row(r, cfg, geo, use_cache):
     return best
 
 
+def verify_row(r, cfg, geo):
+    res = S.results[r["row"]]
+    lat, lng = res.get("lat"), res.get("lng")
+    text = ", ".join(x for x in (r["name"], r["address"], cfg["default_country"]) if x)
+    resp = geo.places_search(text, lat, lng)  # may raise FatalApiError
+    if resp["status"] == "ERROR":
+        return {"v_status": g.V_ERR, "v_note": resp.get("error", "")}
+    return g.verify_name(resp["places"], r["name"], lat, lng)
+
+
+def update_result(row, fields):
+    S.seq += 1
+    S.results[row] = {**S.results[row], **fields, "seq": S.seq}
+
+
 def set_result(row, res, r):
     if r.get("dup_note"):
         res["note"] = "; ".join(x for x in (res.get("note"), r["dup_note"]) if x)
@@ -224,18 +251,25 @@ def set_result(row, res, r):
     S.results[row] = res
 
 
-def worker(rows, cfg, use_cache):
+def worker(rows, cfg, use_cache, task="geocode"):
     geo = get_geocoder()
     try:
         for i, r in enumerate(rows):
             if S.stop_event.is_set():
                 S.state = "stopped"
                 break
-            res = geocode_row(r, cfg, geo, use_cache)
-            with S.lock:
-                set_result(r["row"], res, r)
-                S.completed += 1
-            log.info("Row %s: %s", r["row"], res["status"])  # no addresses in logs
+            if task == "verify":
+                res = verify_row(r, cfg, geo)
+                with S.lock:
+                    update_result(r["row"], res)
+                    S.completed += 1
+                log.info("Row %s: %s", r["row"], res["v_status"])
+            else:
+                res = geocode_row(r, cfg, geo, use_cache)
+                with S.lock:
+                    set_result(r["row"], res, r)
+                    S.completed += 1
+                log.info("Row %s: %s", r["row"], res["status"])  # no addresses in logs
             if i % 25 == 0:
                 geo.save_cache()
         else:
@@ -364,6 +398,8 @@ def api_start():
     except ValueError as e:
         return err(str(e))
     mode = body.get("mode", "all")
+    if mode == "verify" and (S.config != cfg or not S.results):
+        return err("Run Start Geocoding first (with these same settings), then verify names.")
     with S.lock:
         if S.config != cfg:   # new settings: start fresh; same settings: resume
             S.results, S.generation = {}, S.generation + 1
@@ -371,11 +407,13 @@ def api_start():
         todo = rows_to_process(rows, S.results, mode)
         if not todo:
             S.state = "done"
-            return jsonify({"started": False, "message": "Nothing left to process."})
+            return jsonify({"started": False, "message": "Nothing left to process." if mode != "verify" else
+                            "All rows with a customer name are already checked."})
         S.stop_event.clear()
         S.state, S.error = "running", ""
         S.total, S.completed = len(todo), 0
-        S.thread = threading.Thread(target=worker, args=(todo, cfg, mode != "retry"), daemon=True)
+        S.thread = threading.Thread(target=worker, args=(todo, cfg, mode != "retry",
+                                                         "verify" if mode == "verify" else "geocode"), daemon=True)
         S.thread.start()
     return jsonify({"started": True, "total": len(todo)})
 
@@ -417,6 +455,37 @@ def api_mapdata():
     return jsonify({"rows": out, "without_coords": missing})
 
 
+def use_place_candidates():
+    """Rows where Google's business listing (matching name) is a better location than the address geocode."""
+    return [row for row, r in S.results.items() if r.get("place_lat") is not None and (
+        r.get("v_status") == g.V_FAR or (r.get("v_status") == g.V_OK and r["status"] != g.PRECISE))]
+
+
+@app.post("/api/use_place")
+def api_use_place():
+    """Replace coordinates with the Google business listing's location (one row, or all candidates)."""
+    if S.running():
+        return err("Wait for processing to finish.")
+    body = request.get_json(force=True)
+    rows = use_place_candidates() if body.get("all") else [int(body.get("row", 0))]
+    done = 0
+    with S.lock:
+        for row in rows:
+            r = S.results.get(row)
+            if not r or r.get("place_lat") is None:
+                continue
+            note = "; ".join(x for x in (r.get("note"), "Coordinates set from Google business listing "
+                                         f"'{r['place_name']}'") if x)
+            update_result(row, {"lat": r["place_lat"], "lng": r["place_lng"], "status": g.PRECISE,
+                                "loc_type": "GOOGLE_BUSINESS_LISTING", "matched": r["place_address"],
+                                "place_id": r.get("place_ref"), "note": note, "distance_m": 0,
+                                "v_status": g.V_CLOSED if r.get("v_status") == g.V_CLOSED else g.V_OK})
+            done += 1
+    if not done:
+        return err("No Google business location available for that row.")
+    return jsonify({"updated": done})
+
+
 @app.post("/api/stop")
 def api_stop():
     if S.running():
@@ -429,16 +498,18 @@ def api_stop():
 def api_status():
     since = request.args.get("since", default=0, type=int)
     with S.lock:
-        counts = {}
+        counts, vcounts = {}, {}
         for res in S.results.values():
             counts[res["status"]] = counts.get(res["status"], 0) + 1
+            if res.get("v_status"):
+                vcounts[res["v_status"]] = vcounts.get(res["v_status"], 0) + 1
         changed = [{"row": row, **{k: res.get(k) for k in
-                    ("name", "address", "lat", "lng", "matched", "loc_type", "status", "note", "seq")}}
+                    ("name", "address", "lat", "lng", "matched", "loc_type", "status", "note", "seq") + VERIFY_KEYS}}
                    for row, res in S.results.items() if res["seq"] > since]
         state = S.state if not (S.state in ("running", "stopping") and not S.running()) else "stopped"
         return jsonify({
             "state": state, "error": S.error, "total": S.total, "completed": S.completed,
-            "counts": counts, "results": sorted(changed, key=lambda x: x["row"]), "seq": S.seq,
+            "counts": counts, "vcounts": vcounts, "use_place_count": len(use_place_candidates()), "results": sorted(changed, key=lambda x: x["row"]), "seq": S.seq,
             "generation": S.generation,
             "processed": len(S.results), "requests_made": S.geo.requests_made if S.geo else 0,
         })
@@ -453,8 +524,9 @@ def api_download():
     out = os.path.join(WORK_DIR, f"output_{uuid.uuid4().hex}.xlsx")
     m = S.config["mapping"]
     try:
+        extra = VERIFY_COLUMNS if any(r.get("v_status") for r in S.results.values()) else []
         excel_io.write_output(S.file_path, out, S.config["sheet"], S.data.header_row,
-                              S.results, m["lat"], m["lng"])
+                              S.results, m["lat"], m["lng"], extra)
     except Exception:
         log.exception("Writing output failed")
         return err("Could not create the output file.", 500)

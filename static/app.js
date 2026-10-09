@@ -4,13 +4,18 @@ const LABELS = {
   NOT_FOUND: "Not found", API_ERROR: "API error", MISSING_ADDRESS: "Missing address", SKIPPED_EXISTING: "Skipped (existing)",
   FROM_FILE: "From file",
 };
+const VLABELS = {
+  NAME_VERIFIED: "Name verified", NAME_VERIFIED_FAR: "Name found, but far away", NAME_MISMATCH: "Different business at Google",
+  NO_BUSINESS_FOUND: "No business found", BUSINESS_CLOSED: "Business closed", VERIFY_ERROR: "Name check error",
+};
+let lastMode = "all";
 const COLORS = {
   SUCCESS_PRECISE: "#1a7f37", SUCCESS_APPROXIMATE: "#d29922", REVIEW_REQUIRED: "#cf222e", NOT_FOUND: "#cf222e",
   API_ERROR: "#cf222e", SKIPPED_EXISTING: "#6e7781", FROM_FILE: "#1f6feb",
 };
 let headers = [], seq = 0, generation = null, polling = null, estTimer = null;
 const rowEls = new Map(), rowData = new Map(), markers = new Map();
-let gmap = null, info = null, AdvMarker = null, Pin = null;
+let gmap = null, info = null, AdvMarker = null, Pin = null, bizMarker = null;
 
 function showMsg(text, kind = "error") {
   const m = $("message");
@@ -107,7 +112,14 @@ function updateEstimate() {
 // ---- run ----
 async function start(mode) {
   showMsg("");
+  lastMode = mode;
   try {
+    if (mode === "verify") {
+      const e = await post("/api/estimate", config("verify"));
+      if (!e.to_process) { showMsg("All rows with a customer name are already checked.", "info"); return; }
+      if (!confirm(`Check ${e.to_process} customer names on Google (Places API)?\n\nThis makes up to ${e.to_process} Places requests, ` +
+        "billed separately from geocoding at a higher price. Your key must have 'Places API (New)' enabled.")) return;
+    }
     const d = await post("/api/start", config(mode));
     if (!d.started) { showMsg(d.message, "info"); await poll(); return; }
     setRunning(true);
@@ -116,6 +128,19 @@ async function start(mode) {
 }
 $("startBtn").onclick = () => start("all");
 $("retryBtn").onclick = () => start("retry");
+$("verifyBtn").onclick = () => start("verify");
+$("usePlaceBtn").onclick = async () => {
+  if (!confirm("Replace the coordinates of these rows with the location of the matching Google business listing?\n\n" +
+    "Only rows where the customer name matches Google's listing and the address-based result was weak or far away are changed.")) return;
+  try { const d = await post("/api/use_place", { all: true }); showMsg(`Updated ${d.updated} rows.`, "info"); poll(); }
+  catch (e) { showMsg(e.message); }
+};
+document.addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-use-row]");
+  if (!b) return;
+  try { await post("/api/use_place", { row: +b.dataset.useRow }); await poll(); openInfo(+b.dataset.useRow); }
+  catch (err) { showMsg(err.message); }
+});
 $("stopBtn").onclick = async () => { await post("/api/stop").catch(() => {}); $("stopBtn").disabled = true; };
 $("downloadBtn").onclick = async () => {
   showMsg("");
@@ -137,6 +162,7 @@ $("clearBtn").onclick = async () => {
 
 function setRunning(on) {
   $("startBtn").disabled = on; $("retryBtn").disabled = on; $("downloadBtn").disabled = on;
+  $("verifyBtn").disabled = on; $("usePlaceBtn").disabled = on;
   $("stopBtn").disabled = !on; $("file").disabled = on;
   document.querySelectorAll("#setup select, #setup input").forEach((el) => (el.disabled = on));
   clearInterval(polling);
@@ -155,14 +181,22 @@ async function poll() {
   $("progressText").textContent = d.total ? `${d.completed} / ${d.total} rows (${pct}%) · state: ${d.state} · API requests this session: ${d.requests_made}` : "";
   const c = d.counts;
   $("summary").innerHTML = Object.keys(LABELS).filter((k) => c[k]).map((k) => `<span>${LABELS[k]}: <b>${c[k]}</b></span>`).join("");
+  const v = d.vcounts || {};
+  $("vsummary").innerHTML = Object.keys(v).length ? "<b>Name check:</b> " +
+    Object.keys(VLABELS).filter((k) => v[k]).map((k) => `<span class="v-${k}">${VLABELS[k]}: ${v[k]}</span>`).join("") : "";
+  $("usePlaceBtn").textContent = `Use Google business location for ${d.use_place_count} rows`;
+  $("usePlaceBtn").classList.toggle("hidden", !d.use_place_count);
   const running = d.state === "running" || d.state === "stopping";
   if (!running) {
     setRunning(false);
     $("downloadBtn").disabled = d.processed === 0;
     $("retryBtn").disabled = !(c.API_ERROR || c.NOT_FOUND || c.REVIEW_REQUIRED);
+    $("verifyBtn").disabled = d.processed === 0;
     if (d.state === "error") showMsg(d.error);
-    else if (d.state === "stopped") showMsg("Stopped. Click Start Geocoding to resume the remaining rows.", "info");
-    else if (d.state === "done") showMsg("Finished. Review the flagged rows, then download the updated Excel.", "info");
+    else if (d.state === "stopped") showMsg(`Stopped. Click ${lastMode === "verify" ? "Verify names" : "Start Geocoding"} to resume the remaining rows.`, "info");
+    else if (d.state === "done" && polling !== null) showMsg(lastMode === "verify"
+      ? "Name check finished. Filter by 'Name check' to review problems; click a row to compare on the map."
+      : "Finished. Review the flagged rows, then download the updated Excel. Optional: Verify names with Google.", "info");
     updateEstimate();
   }
 }
@@ -174,19 +208,31 @@ function renderRow(r) {
   const num = (v) => (v === null || v === undefined ? "" : (+v).toFixed(7));
   tr.dataset.status = r.status;
   tr.dataset.row = r.row;
-  tr.innerHTML = [r.row, r.name, r.address, num(r.lat), num(r.lng), r.matched, r.loc_type].map((v) => `<td>${esc(v ?? "")}</td>`).join("") +
-    `<td class="s-${r.status}">${esc(r.status)}</td><td>${esc(r.note ?? "")}</td><td>${hasCoords(r) ? gmapsLink(r) : ""}</td>`;
   rowData.set(r.row, r);
+  const check = r.v_status ? `<span class="v-${r.v_status}">${esc(VLABELS[r.v_status] || r.v_status)}</span>` +
+    (r.place_name ? `<br>Google: ${esc(r.place_name)} (${r.name_score}% match${r.distance_m != null ? `, ${r.distance_m} m` : ""})` : "") : "";
+  tr.innerHTML = [r.row, r.name, r.address, num(r.lat), num(r.lng), r.matched, r.loc_type].map((v) => `<td>${esc(v ?? "")}</td>`).join("") +
+    `<td class="s-${r.status}">${esc(r.status)}</td><td>${esc(r.note ?? "")}</td><td>${check}</td><td class="links">${links(r)}</td>`;
   applyFilter(tr);
   if (gmap) setMarker(r);
 }
 const hasCoords = (r) => r.lat !== null && r.lat !== undefined && r.lng !== null && r.lng !== undefined;
-const gmapsLink = (r) => `<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Open</a>`;
-const shown = (status) => { const f = $("filter").value; return !f || status === f; };
-const applyFilter = (tr) => tr.classList.toggle("hidden", !shown(tr.dataset.status));
+const gmapsLink = (r) => `<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Open pin</a>`;
+const ext = (url, text) => `<a href="${esc(url)}" target="_blank" rel="noopener">${text}</a>`;
+// Free check: Google Maps search for "name, address" shows the business listing Google knows
+const nameSearchUrl = (r) => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent([r.name, r.address].filter(Boolean).join(", "));
+function links(r) {
+  return [hasCoords(r) ? gmapsLink(r) : "", r.name ? ext(nameSearchUrl(r), "Search name") : "",
+    r.place_uri ? ext(r.place_uri, "Google listing") : ""].join("");
+}
+const shown = (r) => {
+  const f = $("filter").value;
+  return !f || (f.startsWith("v:") ? r.v_status === f.slice(2) : r.status === f);
+};
+const applyFilter = (tr) => tr.classList.toggle("hidden", !shown(rowData.get(+tr.dataset.row) || {}));
 $("filter").onchange = () => {
   rowEls.forEach(applyFilter);
-  markers.forEach((m, row) => (m.map = shown(rowData.get(row).status) ? gmap : null));
+  markers.forEach((m, row) => (m.map = shown(rowData.get(row)) ? gmap : null));
 };
 
 // ---- Google map ----
@@ -220,7 +266,8 @@ async function initMap() {
 function setMarker(r) {
   let m = markers.get(r.row);
   if (!hasCoords(r)) { if (m) { m.map = null; markers.delete(r.row); } return; }
-  const pin = new Pin({ background: COLORS[r.status] || "#1f6feb", borderColor: "#ffffff", glyphColor: "#ffffff", scale: 0.8 });
+  const glyph = r.v_status === "NAME_VERIFIED" ? "✓" : r.v_status ? "!" : "";
+  const pin = new Pin({ background: COLORS[r.status] || "#1f6feb", borderColor: "#ffffff", glyphColor: "#ffffff", glyph, scale: 0.9 });
   if (!m) {
     m = new AdvMarker({ map: null, gmpClickable: true });
     m.addListener("click", () => openInfo(m.rowNum));
@@ -230,17 +277,29 @@ function setMarker(r) {
   m.position = { lat: +r.lat, lng: +r.lng };
   m.title = `${r.name || "Row " + r.row}`;
   m.content = pin.element;
-  m.map = shown(r.status) ? gmap : null;
+  m.map = shown(r) ? gmap : null;
 }
 
 function openInfo(row) {
   const r = rowData.get(row), m = markers.get(row);
   if (!r || !m) return;
-  info.setContent(`<div class="info"><b>${esc(r.name || "(no name)")}</b>Row ${r.row} · <span class="s-${r.status}">${esc(LABELS[r.status] || r.status)}</span>` +
-    `<br><br><u>Your address:</u> ${esc(r.address || "-")}<br><u>Google matched:</u> ${esc(r.matched || "-")}` +
-    `<br><u>Accuracy:</u> ${esc(r.loc_type || "-")}${r.note ? `<br><u>Note:</u> ${esc(r.note)}` : ""}` +
-    `<br>${(+r.lat).toFixed(6)}, ${(+r.lng).toFixed(6)} · ${gmapsLink(r)}</div>`);
+  const biz = r.place_name != null;
+  info.setContent(`<div class="info"><b>${esc(r.name || "(no name)")}</b>Row ${r.row} · ${esc(LABELS[r.status] || r.status)} · ${esc(r.loc_type || "")}` +
+    `<table><tr><th></th><th>Your sheet</th><th>Google</th></tr>` +
+    `<tr><th>Name</th><td>${esc(r.name || "-")}</td><td>${biz ? esc(r.place_name) + ` (${r.name_score}% match)` : r.v_status ? "—" : "<i>not checked</i>"}</td></tr>` +
+    `<tr><th>Address</th><td>${esc(r.address || "-")}</td><td>${esc(r.matched || "-")}${biz && r.place_address !== r.matched ? `<br><i>Listing:</i> ${esc(r.place_address)}` : ""}</td></tr></table>` +
+    (r.v_status ? `<span class="v-${r.v_status}">${esc(VLABELS[r.v_status])}</span>: ${esc(r.v_note || "")}<br>` : "") +
+    (r.note ? `<small>${esc(r.note)}</small><br>` : "") +
+    `${(+r.lat).toFixed(6)}, ${(+r.lng).toFixed(6)} · ${links(r).replaceAll("</a><a", "</a> · <a")}` +
+    (biz && r.distance_m > 0 ? `<br><button data-use-row="${r.row}">Use Google business location (${r.distance_m} m away)</button>` : "") +
+    `</div>`);
   info.open({ anchor: m, map: gmap });
+  // Show the business listing's own position as a second pin "B"
+  if (bizMarker) bizMarker.map = null;
+  if (biz && r.place_lat != null && r.distance_m > 0) {
+    bizMarker = new AdvMarker({ map: gmap, position: { lat: +r.place_lat, lng: +r.place_lng }, title: "Google listing: " + r.place_name,
+      content: new Pin({ background: "#8250df", borderColor: "#fff", glyphColor: "#fff", glyph: "B" }).element });
+  }
 }
 
 function fitMap() {

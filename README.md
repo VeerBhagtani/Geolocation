@@ -121,6 +121,28 @@ Notes:
 4. Pins: green = precise, amber = approximate, red = review/not found, grey = skipped (existing). Click a pin for your address vs Google's match. Click a table row to jump to it. The **Show** filter also filters the map.
 5. To check a file you downloaded earlier: upload the `_geocoded.xlsx`, make sure **Existing Latitude/Longitude** are selected, then **Show coordinates already in this file** (no geocoding requests).
 
+## Verify restaurant names (Google Places)
+
+Geocoding only matches the **address**. To check that the **restaurant name** at that spot matches Google's business listing:
+
+1. In Google Cloud → **APIs & Services → Library** → enable **Places API (New)**. If your Geocoding key has *API restrictions*, add **Places API (New)** to them.
+2. After **Start Geocoding** finishes, click **Verify names with Google**. It shows how many requests it will make (Places is billed separately and costs more than Geocoding — check current pricing).
+3. Each row gets a **Google business check**:
+
+| Name check | Meaning |
+|---|---|
+| `NAME_VERIFIED` | Google has a business with this name at/near (≤300 m) the coordinates |
+| `NAME_VERIFIED_FAR` | Business with this name exists, but far from the coordinates → coordinates likely wrong |
+| `NAME_MISMATCH` | Google's nearest listing has a different name (shown) |
+| `NO_BUSINESS_FOUND` | Google has no listing for this name |
+| `BUSINESS_CLOSED` | Google lists it as permanently closed |
+
+4. Fix locations: **Use Google business location for N rows** (rows with a verified name whose address result was weak, not found, or far), or per row from the map popup.
+5. On the map, ✓ = name verified, ! = name problem. The popup shows your name/address next to Google's, plus a purple **B** pin at the business listing. The filter has a **Name check** section.
+6. Free manual check (no key): every row has **Search name** (opens Google Maps searching `name, address`) and **Google listing** links.
+
+The downloaded Excel gets extra columns: `Name_Check`, `Google_Business_Name`, `Google_Business_Address`, `Name_Match_Pct`, `Distance_To_Business_m`, `Google_Maps_Link`, `Name_Check_Note`.
+
 ## 7. Stop and clean up
 
 - Click **Clear session & temp files** → deletes the uploaded copy, outputs and the cache in `work/`.

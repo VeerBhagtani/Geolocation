@@ -34,5 +34,12 @@ td.s-REVIEW_REQUIRED, td.s-NOT_FOUND, td.s-API_ERROR, td.s-MISSING_ADDRESS { col
 .legend { margin-left: 8px; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin: 0 4px 0 10px; }
 #results tbody tr { cursor: pointer; }
-.info { color: #1d1d1f; font-size: 13px; max-width: 320px; }
+.info { color: #1d1d1f; font-size: 13px; max-width: 420px; }
 .info b { display: block; margin-bottom: 4px; }
+.v-NAME_VERIFIED { color: #1a7f37; font-weight: 600; }
+.v-NAME_VERIFIED_FAR, .v-NAME_MISMATCH, .v-NO_BUSINESS_FOUND, .v-BUSINESS_CLOSED, .v-VERIFY_ERROR { color: var(--err); font-weight: 600; }
+.info table { border-collapse: collapse; margin: 6px 0; }
+.info td, .info th { border: 1px solid #ccc; padding: 3px 5px; color: #1d1d1f; background: #fff; }
+.info button { color: #fff; background: #1f6feb; border: 0; border-radius: 4px; padding: 5px 9px; margin: 6px 6px 0 0; cursor: pointer; }
+.info .v-NAME_VERIFIED { color: #1a7f37; } .info [class^="v-"]:not(.v-NAME_VERIFIED) { color: #cf222e; }
+td.links a { display: block; white-space: nowrap; }

@@ -434,3 +434,87 @@ def test_mapdata_from_geocoded_file(env):
     assert fake_google.calls == []
     r = env.post("/api/mapdata", json={"sheet": "S", "mapping": {"name": 1}})
     assert r.status_code == 400 and "Latitude" in r.json["error"]
+
+
+# ---------- business name verification (Places) ----------
+
+def test_name_score_and_verify_unit():
+    assert g.name_score("Hotel Shreyas", "Shreyas Pure Veg Restaurant") == 100
+    assert g.name_score("Sai Hotel", "Sai Baba Temple") < g.NAME_MATCH_MIN
+    assert g.name_score("Cafe Mocha", "Vohuman Cafe") < g.NAME_MATCH_MIN
+    p = {"name": "Cafe Mocha", "address": "x", "lat": 18.5, "lng": 73.8, "id": "i", "uri": "u"}
+    assert g.verify_name([p], "Cafe Mocha", 18.5001, 73.8)["v_status"] == g.V_OK
+    assert g.verify_name([p], "Cafe Mocha", 18.52, 73.8)["v_status"] == g.V_FAR
+    assert g.verify_name([p], "Blue Nile", 18.5, 73.8)["v_status"] == g.V_MISMATCH
+    assert g.verify_name([], "Blue Nile")["v_status"] == g.V_NONE
+    assert g.verify_name([dict(p, business_status="CLOSED_PERMANENTLY")], "Cafe Mocha")["v_status"] == g.V_CLOSED
+    # prefers the matching name over a closer different business
+    other = dict(p, name="Other Shop", lat=18.5, lng=73.8)
+    match = dict(p, lat=18.5005)
+    assert g.verify_name([other, match], "Cafe Mocha", 18.5, 73.8)["place_name"] == "Cafe Mocha"
+
+
+def test_verify_names_end_to_end(env):
+    fake_google.places_calls.clear()
+    rows = [[1, "Cafe Mocha", "", "12 Koregaon Park Lane 5", "Pune", "MH", 411001],
+            [2, "Mismatch Corner", "", "4 Station Lane", "Pune", "MH", 411001],
+            [3, "Far Biryani", "", "9 Camp Lane", "Pune", "MH", 411001],
+            [4, "Ghost Kitchen", "", "1 Lane", "Pune", "MH", 411001],
+            [5, "Closed Bakery", "", "7 Lane", "Pune", "MH", 411001],
+            [6, "Lost Dhaba", "", "nowhere village", "Pune", "MH", 411001],
+            [7, "", "", "8 Lane", "Pune", "MH", 411001]]          # no name -> not checked
+    upload(env, make_xlsx(env.tmp / "v.xlsx", {"S": (HEAD, rows)}))
+    body = body_for("S", STD_MAP)
+    assert env.post("/api/start", json={**body, "mode": "verify"}).status_code == 400  # geocode first
+    run(env, body)
+    assert env.post("/api/estimate", json={**body, "mode": "verify"}).json == {"to_process": 6}
+    st = run(env, body, mode="verify")
+    assert st["state"] == "done"
+    by = {r["row"]: r for r in env.get("/api/status").json["results"]}
+    assert by[2]["v_status"] == g.V_OK and by[2]["place_name"] == "Cafe Mocha Pure Veg" and by[2]["distance_m"] < 50
+    assert by[3]["v_status"] == g.V_MISMATCH and "Totally Different Sweets" in by[3]["v_note"]
+    assert by[4]["v_status"] == g.V_FAR and by[4]["distance_m"] > 1000
+    assert by[5]["v_status"] == g.V_NONE
+    assert by[6]["v_status"] == g.V_CLOSED
+    assert by[7]["v_status"] == g.V_OK and by[7]["status"] == g.NOT_FOUND  # found by name although address failed
+    assert by[8].get("v_status") is None
+    assert len(fake_google.places_calls) == 6
+    # nothing left to verify; cached on repeat
+    assert env.post("/api/start", json={**body, "mode": "verify"}).json["started"] is False
+
+    # use business location: candidates = far row + not-found row whose name was verified
+    assert st["use_place_count"] == 2
+    far_place = (by[4]["place_lat"], by[4]["place_lng"])
+    r = env.post("/api/use_place", json={"all": True})
+    assert r.json == {"updated": 2}
+    by = {r["row"]: r for r in env.get("/api/status").json["results"]}
+    assert (by[4]["lat"], by[4]["lng"]) == far_place and by[4]["status"] == g.PRECISE
+    assert by[4]["loc_type"] == "GOOGLE_BUSINESS_LISTING" and by[4]["v_status"] == g.V_OK
+    assert by[7]["lat"] is not None and by[7]["status"] == g.PRECISE
+
+    ws = download(env, env.tmp / "o.xlsx")["S"]
+    assert ws.cell(2, col(ws, "Name_Check")).value == g.V_OK
+    assert ws.cell(2, col(ws, "Google_Business_Name")).value == "Cafe Mocha Pure Veg"
+    assert ws.cell(2, col(ws, "Google_Maps_Link")).hyperlink.target.startswith("https://maps.google.com")
+    assert ws.cell(3, col(ws, "Name_Match_Pct")).value < g.NAME_MATCH_MIN
+    assert ws.cell(4, col(ws, "Latitude")).value == pytest.approx(far_place[0], abs=1e-6)
+    assert ws.cell(8, col(ws, "Name_Check")).value is None
+    assert ws.cell(2, 2).value == "Cafe Mocha"  # original data intact
+
+
+def test_verify_places_api_not_enabled(env, monkeypatch):
+    upload(env, make_xlsx(env.tmp / "v.xlsx", {"S": (HEAD, ROWS[:2])}))
+    body = body_for("S", STD_MAP)
+    run(env, body)
+    env.holder["geo"].api_key = "noplaces-key"
+    monkeypatch.setitem(appmod.KEY, "value", "noplaces-key")
+    st = run(env, body, mode="verify")
+    assert st["state"] == "error" and "Places API (New)" in st["error"]
+    assert st["counts"] == {g.PRECISE: 2}  # geocoding results untouched
+
+
+def test_geocoding_only_has_no_verify_columns(env):
+    upload(env, make_xlsx(env.tmp / "n.xlsx", {"S": (HEAD, ROWS[:1])}))
+    run(env, body_for("S", STD_MAP))
+    ws = download(env, env.tmp / "o.xlsx")["S"]
+    assert "Name_Check" not in [c.value for c in ws[1]]
