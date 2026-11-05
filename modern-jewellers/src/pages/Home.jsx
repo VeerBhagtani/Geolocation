@@ -22,7 +22,7 @@ const CATS = [
   ['Rings', '/shop/rings', '/images/products/celestia-solitaire-diamond-ring.svg'],
   ['Necklaces', '/shop/necklaces', '/images/products/rani-haar-temple-necklace.svg'],
   ['Earrings', '/shop/earrings', '/images/products/rajwadi-gold-jhumkas.svg'],
-  ['Bracelets', '/shop/bracelets', '/images/products/lumiere-diamond-tennis-bracelet.svg'],
+  ['Bracelets', '/shop/bracelets', '/images/products/lumi-re-diamond-tennis-bracelet.svg'],
   ['Bangles', '/shop/bangles', '/images/products/maharani-carved-gold-bangles-pair.svg'],
   ['Mangalsutra', '/shop/mangalsutra', '/images/products/saubhagya-diamond-mangalsutra.svg'],
   ['Bridal Sets', '/shop/bridal-sets', '/images/products/shubh-vivaah-polki-bridal-set.svg'],

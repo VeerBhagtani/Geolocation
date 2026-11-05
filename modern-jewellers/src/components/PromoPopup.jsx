@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Modal from './Modal';
 import NewsletterForm from './NewsletterForm';
@@ -7,10 +7,12 @@ import { readLS } from '../hooks/useLocalStorage';
 export default function PromoPopup() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const pathRef = useRef(pathname);
+  pathRef.current = pathname;
   useEffect(() => {
     if (readLS('mj_popup_dismissed', false) || sessionStorage.getItem('mj_popup_seen')) return;
     const t = setTimeout(() => {
-      if (!['/checkout', '/cart'].includes(window.location.pathname)) {
+      if (!['/checkout', '/cart'].includes(pathRef.current)) {
         setOpen(true);
         sessionStorage.setItem('mj_popup_seen', '1');
       }

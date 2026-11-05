@@ -6,6 +6,8 @@ import { Input, Select, Textarea, RadioGroup, Checkbox, MultiSelect } from '../c
 import { ClockIcon, MailIcon, PhoneIcon, PinIcon } from '../components/Icons';
 import stores from '../data/stores.json';
 
+const SmartLink = ({ href, ...p }) => (href.startsWith('/') ? <Link to={href} {...p} /> : <a href={href} {...p} />);
+
 const INITIAL = { name: '', email: '', phone: '', subject: '', store: '', interests: [], contactPref: 'Email', visitDate: '', message: '', consent: false };
 
 export default function Contact() {
@@ -32,10 +34,10 @@ export default function Contact() {
       <div className="grid gap-10 lg:grid-cols-[1fr_1.5fr]">
         <div className="space-y-4">
           {[[PhoneIcon, 'Call our concierge', '+91 22 4000 1987', 'tel:+912240001987'], [MailIcon, 'Write to us', 'care@modernjewellers.example', 'mailto:care@modernjewellers.example'], [PinIcon, 'Flagship store', '14, Rampart Row, Kala Ghoda, Mumbai 400001', '/stores'], [ClockIcon, 'Hours', 'Mon–Sun · 10:30 AM – 9:00 PM', '/stores']].map(([I, t, v, href]) => (
-            <a key={t} href={href} className="card flex items-start gap-4 p-5 transition hover:shadow-luxe">
+            <SmartLink key={t} href={href} className="card flex items-start gap-4 p-5 transition hover:shadow-luxe">
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cream-100 text-champagne-600"><I /></span>
               <span><span className="block text-xs uppercase tracking-widest text-cocoa-400">{t}</span><span className="text-cocoa-700">{v}</span></span>
-            </a>
+            </SmartLink>
           ))}
           <div className="card p-5 text-sm text-cocoa-500">
             Looking for something specific? Visit our <Link to="/faq" className="text-champagne-700 underline">FAQs</Link>, <Link to="/track-order" className="text-champagne-700 underline">track an order</Link> or <Link to="/returns" className="text-champagne-700 underline">request a return</Link>.

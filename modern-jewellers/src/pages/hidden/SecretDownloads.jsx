@@ -21,13 +21,13 @@ export default function SecretDownloads() {
             <p className="text-sm text-cocoa-500">Unlisted pieces, private-viewing schedule and management access notes.</p>
             <p className="text-xs text-cocoa-300">MJ_Vault_Ledger_Q4_2026.pdf</p>
           </div>
-          <a href="/downloads/private/MJ_Vault_Ledger_Q4_2026.pdf" download onClick={() => discover('hidden-download')} className="btn-gold btn-sm" id="vault-ledger-download"><DownloadIcon width={16} /> Download</a>
+          <a href="/downloads/private/MJ_Vault_Ledger_Q4_2026.pdf" download="MJ_Vault_Ledger_Q4_2026.pdf" onClick={() => discover('hidden-download')} className="btn-gold btn-sm" id="vault-ledger-download"><DownloadIcon width={16} /> Download</a>
         </div>
         <p className="eyebrow pt-6">Also available</p>
         {DOWNLOADS.map((d) => (
           <div key={d.file} className="card flex items-center justify-between gap-4 p-4">
             <span className="text-sm">{d.title} <span className="text-cocoa-300">· {d.file}</span></span>
-            <a href={`/downloads/${d.file}`} download className="btn-outline btn-sm"><DownloadIcon width={14} /> Download</a>
+            <a href={d.href} download={d.file} className="btn-outline btn-sm"><DownloadIcon width={14} /> Download</a>
           </div>
         ))}
         <p className="pt-4 text-center text-sm"><Link to="/product/MJ-BS-7001" className="text-cocoa-400 underline">Back to Shubh Vivaah Bridal Set</Link></p>

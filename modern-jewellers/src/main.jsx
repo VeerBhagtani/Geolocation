@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, HashRouter } from 'react-router-dom';
+
+// Single-file build (opened via file://) uses hash URLs.
+const Router = import.meta.env.VITE_SINGLE ? HashRouter : BrowserRouter;
 import '@fontsource/cormorant-garamond/400.css';
 import '@fontsource/cormorant-garamond/500.css';
 import '@fontsource/cormorant-garamond/600.css';
@@ -15,10 +18,10 @@ import { StoreProvider } from './context/StoreContext';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <Router>
       <StoreProvider>
         <App />
       </StoreProvider>
-    </BrowserRouter>
+    </Router>
   </React.StrictMode>,
 );

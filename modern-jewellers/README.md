@@ -73,3 +73,9 @@ modern-jewellers/
 ## Notes
 - All names, people, stores, figures and documents are fictional.
 - `localStorage` keys are prefixed with `mj_`; clearing site data resets the demo.
+
+## Single-file version
+`standalone/index.html` is the entire site in one self-contained file (all code, styles, fonts, images and downloads inlined; hash URLs such as `index.html#/shop`). Open it directly in Chrome/Edge — no install or server needed. Rebuild with:
+```bash
+npm run build:single   # writes dist-single/index.html
+```

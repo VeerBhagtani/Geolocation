@@ -2,11 +2,11 @@ import Breadcrumbs from '../components/Breadcrumbs';
 import { DownloadIcon } from '../components/Icons';
 
 export const DOWNLOADS = [
-  { file: 'Modern_Jewellers_Catalogue.pdf', title: 'Product Catalogue 2026', desc: 'Full illustrated catalogue with prices, materials and IDs.', type: 'PDF' },
-  { file: 'Modern_Jewellers_Price_List.xlsx', title: 'Price List', desc: 'Current price list with purity, weight and making charges.', type: 'Excel' },
-  { file: 'Inventory_Report.csv', title: 'Inventory Report', desc: 'Stock levels by product and store location.', type: 'CSV' },
-  { file: 'Company_Profile.pdf', title: 'Company Profile', desc: 'Our heritage, leadership, stores and certifications.', type: 'PDF' },
-  { file: 'Product_Details.pdf', title: 'Product Details & Specifications', desc: 'Detailed specification sheets for every piece.', type: 'PDF' },
+  { file: 'Modern_Jewellers_Catalogue.pdf', href: '/downloads/Modern_Jewellers_Catalogue.pdf', title: 'Product Catalogue 2026', desc: 'Full illustrated catalogue with prices, materials and IDs.', type: 'PDF' },
+  { file: 'Modern_Jewellers_Price_List.xlsx', href: '/downloads/Modern_Jewellers_Price_List.xlsx', title: 'Price List', desc: 'Current price list with purity, weight and making charges.', type: 'Excel' },
+  { file: 'Inventory_Report.csv', href: '/downloads/Inventory_Report.csv', title: 'Inventory Report', desc: 'Stock levels by product and store location.', type: 'CSV' },
+  { file: 'Company_Profile.pdf', href: '/downloads/Company_Profile.pdf', title: 'Company Profile', desc: 'Our heritage, leadership, stores and certifications.', type: 'PDF' },
+  { file: 'Product_Details.pdf', href: '/downloads/Product_Details.pdf', title: 'Product Details & Specifications', desc: 'Detailed specification sheets for every piece.', type: 'PDF' },
 ];
 
 export default function Downloads() {
@@ -25,7 +25,7 @@ export default function Downloads() {
               <p className="text-sm text-cocoa-500">{d.desc}</p>
               <p className="text-xs text-cocoa-300">{d.file}</p>
             </div>
-            <a href={`/downloads/${d.file}`} download={d.file} className="btn-gold btn-sm"><DownloadIcon width={16} /> Download</a>
+            <a href={d.href} download={d.file} className="btn-gold btn-sm"><DownloadIcon width={16} /> Download</a>
           </div>
         ))}
       </div>

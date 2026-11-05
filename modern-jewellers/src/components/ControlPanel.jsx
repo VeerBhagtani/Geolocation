@@ -24,7 +24,7 @@ export default function ControlPanel() {
   const resetAll = () => {
     Object.keys(localStorage).filter((k) => k.startsWith('mj_')).forEach((k) => localStorage.removeItem(k));
     notify('All demo data has been reset. Reloading…', 'info');
-    setTimeout(() => window.location.assign('/'), 800);
+    setTimeout(() => (window.location.hash ? (window.location.hash = '#/') : window.history.replaceState(null, '', '/'), window.location.reload()), 800);
   };
 
   return (
