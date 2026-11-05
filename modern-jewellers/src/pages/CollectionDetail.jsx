@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import collections from '../data/collections.json';
@@ -24,7 +25,7 @@ export default function CollectionDetail() {
   return (
     <div className="page-enter">
       <div className="relative h-[360px] overflow-hidden md:h-[440px]">
-        <img src={c.banner} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
+        <img src={photo(c.banner)} alt={c.name} className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-50/70 to-transparent" />
         <div className="container-luxe relative flex h-full flex-col justify-center">
           <p className="eyebrow">{c.tagline}</p>

@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { Link } from 'react-router-dom';
 import collections from '../data/collections.json';
 import { useStore } from '../context/StoreContext';
@@ -17,7 +18,7 @@ export default function Collections() {
           return (
             <Reveal key={c.slug} className={`grid items-center gap-8 overflow-hidden rounded-3xl border border-cream-200 bg-white shadow-soft md:grid-cols-2 ${i % 2 ? 'md:[&>*:first-child]:order-2' : ''}`}>
               <Link to={`/collections/${c.slug}`} className="group block aspect-[16/10] overflow-hidden">
-                <img src={c.banner} alt={c.name} className="h-full w-full object-cover transition duration-1000 group-hover:scale-105" />
+                <img src={photo(c.banner)} alt={c.name} className="h-full w-full object-cover transition duration-1000 group-hover:scale-105" />
               </Link>
               <div className="p-8 md:p-12">
                 <p className="eyebrow">{c.tagline}</p>

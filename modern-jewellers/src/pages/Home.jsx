@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
@@ -39,7 +40,7 @@ function Hero() {
     <section className="relative overflow-hidden bg-cream-100" aria-label="Featured collections" data-section="hero">
       {SLIDES.map((s, idx) => (
         <div key={s.title} className={`absolute inset-0 transition-opacity duration-1000 ${idx === i ? 'opacity-100' : 'pointer-events-none opacity-0'}`} aria-hidden={idx !== i}>
-          <img src={s.img} alt="" className="h-full w-full object-cover object-right" />
+          <img src={photo(s.img)} alt="" className="h-full w-full object-cover object-right" />
         </div>
       ))}
       <div className="absolute inset-0 bg-gradient-to-r from-cream-50 via-cream-50/80 to-transparent" />
@@ -82,7 +83,7 @@ export default function Home() {
           {CATS.map(([l, to, img]) => (
             <Link key={l} to={to} className="group flex flex-col items-center gap-3 text-center">
               <span className="block aspect-square w-full overflow-hidden rounded-full border-2 border-cream-200 shadow-soft transition group-hover:border-champagne-400">
-                <img src={img} alt={l} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
+                <img src={photo(img)} alt={l} className="h-full w-full object-cover transition duration-700 group-hover:scale-110" />
               </span>
               <span className="text-xs uppercase tracking-widest text-cocoa-600 group-hover:text-champagne-700">{l}</span>
             </Link>
@@ -127,7 +128,7 @@ export default function Home() {
           {collections.map((c, i) => (
             <Link key={c.slug} to={`/collections/${c.slug}`}
               className={`group relative overflow-hidden rounded-3xl shadow-soft ${i < 2 ? 'md:col-span-3 aspect-[16/10]' : 'md:col-span-2 aspect-[4/3]'}`}>
-              <img src={c.banner} alt={c.name} className="absolute inset-0 h-full w-full object-cover transition duration-1000 group-hover:scale-105" />
+              <img src={photo(c.banner)} alt={c.name} className="absolute inset-0 h-full w-full object-cover transition duration-1000 group-hover:scale-105" />
               <div className="absolute inset-0 bg-gradient-to-t from-cocoa-800/55 via-cocoa-800/10 to-transparent" />
               <div className="absolute bottom-0 p-6 text-white">
                 <p className="text-xs uppercase tracking-[0.3em] text-champagne-300">{c.tagline}</p>
@@ -142,7 +143,7 @@ export default function Home() {
       <Reveal as="section" className="mt-24 bg-cream-100 py-20" data-section="brand-introduction">
         <div className="container-luxe group/brand relative grid items-center gap-12 lg:grid-cols-2" id="brand-intro">
           <div className="relative">
-            <img src="/images/banners/collection-royal.svg" alt="Modern Jewellers atelier craftsmanship" className="rounded-3xl shadow-luxe" />
+            <img src={photo('/images/banners/collection-royal.svg')} alt="Modern Jewellers atelier craftsmanship" className="rounded-3xl shadow-luxe" />
             <div className="absolute -bottom-6 -right-6 hidden rounded-2xl bg-white p-6 shadow-luxe md:block">
               <p className="font-serif text-5xl text-champagne-600">39</p>
               <p className="text-xs uppercase tracking-widest text-cocoa-500">Years of craft</p>

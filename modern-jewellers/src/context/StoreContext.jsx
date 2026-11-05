@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react';
-import baseProducts from '../data/products.json';
+import rawProducts from '../data/products.json';
+import { photo } from '../data/photos';
 import coupons from '../data/coupons.json';
 import useLocalStorage from '../hooks/useLocalStorage';
 import { calcShipping, GST_RATE } from '../utils/format';
 
 const StoreContext = createContext(null);
+const baseProducts = rawProducts.map((p) => ({ ...p, image: photo(p.image), fallbackImage: p.image }));
 let toastId = 0;
 
 export function StoreProvider({ children }) {

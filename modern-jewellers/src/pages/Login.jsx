@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
 import { useStore } from '../context/StoreContext';
@@ -22,7 +23,7 @@ export default function Login() {
     <div className="container-luxe page-enter">
       <Breadcrumbs items={[{ label: 'Sign In' }]} />
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl border border-cream-200 bg-white shadow-luxe md:grid-cols-2">
-        <div className="hidden bg-cream-100 md:block"><img src="/images/banners/collection-everyday.svg" alt="" className="h-full w-full object-cover" /></div>
+        <div className="hidden bg-cream-100 md:block"><img src={photo('/images/banners/collection-everyday.svg')} alt="" className="h-full w-full object-cover" /></div>
         <form onSubmit={onSubmit} noValidate className="space-y-5 p-8 md:p-12" aria-label="Customer login">
           <p className="eyebrow">Welcome back</p>
           <h1 className="font-serif text-4xl">Sign In</h1>

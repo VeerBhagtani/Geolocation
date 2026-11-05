@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../context/StoreContext';
@@ -56,7 +57,7 @@ export default function About() {
                 <p className="font-serif text-lg italic text-cocoa-500">“Purity is not a promise. It is a practice.” — Harish Mehta</p>
               </div>
             </div>
-            <img src="/images/banners/hero-royal.svg" alt="Royal temple necklace crafted at our atelier" className="rounded-3xl shadow-luxe" />
+            <img src={photo('/images/banners/hero-royal.svg')} alt="Royal temple necklace crafted at our atelier" className="rounded-3xl shadow-luxe" />
           </div>
         </div>
       </div>

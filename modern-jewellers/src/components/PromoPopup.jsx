@@ -1,3 +1,4 @@
+import { photo } from '../data/photos';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Modal from './Modal';
@@ -26,7 +27,7 @@ export default function PromoPopup() {
   return (
     <Modal open={open} onClose={() => close(false)} title="">
       <div className="text-center" data-testid="promo-popup">
-        <img src="/images/products/tara-diamond-pendant-necklace.svg" alt="Tara Diamond Pendant" className="mx-auto -mt-6 h-40 w-40 rounded-full object-cover shadow-soft" />
+        <img src={photo('/images/products/tara-diamond-pendant-necklace.svg')} alt="Tara Diamond Pendant" className="mx-auto -mt-6 h-40 w-40 rounded-full object-cover shadow-soft" />
         <p className="eyebrow mt-4">A Welcome Gift</p>
         <h3 className="mt-2 font-serif text-4xl">Enjoy <span className="gold-text font-semibold">10% Off</span></h3>
         <p className="mx-auto mt-2 max-w-sm text-sm text-cocoa-500">Subscribe for your first-order privilege. Or simply use code <strong className="text-champagne-700">WELCOME10</strong> at checkout.</p>
