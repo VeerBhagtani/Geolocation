@@ -1,0 +1,13 @@
+[
+  {"category":"Orders & Shipping","q":"How long does delivery take?","a":"Ready-to-ship pieces are delivered in 3–5 working days across India via fully insured, tamper-proof packaging. Metro pincodes qualify for express 24–48 hour delivery."},
+  {"category":"Orders & Shipping","q":"Is shipping free?","a":"Insured shipping is free on all orders above ₹25,000. A flat ₹499 is charged on smaller orders. Express delivery costs an additional ₹999."},
+  {"category":"Orders & Shipping","q":"How can I track my order?","a":"Visit the Track Order page and enter your order number (e.g. MJ-ORD-240117) with your registered email or phone number."},
+  {"category":"Purity & Certification","q":"Is your gold hallmarked?","a":"Yes. Every gold piece carries a BIS hallmark with a 6-digit HUID code. Diamond jewellery is certified by IGI or SGL."},
+  {"category":"Purity & Certification","q":"What is the difference between 22K and 18K gold?","a":"22K gold is 91.6% pure and ideal for traditional jewellery. 18K gold is 75% pure, making it stronger and perfect for diamond settings."},
+  {"category":"Returns & Exchange","q":"What is your return policy?","a":"We offer 15-day no-questions-asked returns on unworn jewellery in original packaging, and lifetime exchange at the prevailing gold rate."},
+  {"category":"Returns & Exchange","q":"Can I exchange my old gold?","a":"Absolutely. Bring your old gold to any Modern Jewellers store for a free karat-meter test and get 100% value on exchange for new jewellery."},
+  {"category":"Payments","q":"Which payment methods are accepted?","a":"UPI, credit/debit cards, net banking, EMI on select cards and Cash on Delivery for orders up to ₹50,000. (This demo site simulates payment only.)"},
+  {"category":"Payments","q":"Do you offer EMI?","a":"Yes, no-cost EMI for 3, 6 and 9 months is available on orders above ₹30,000 with partner banks."},
+  {"category":"Care & Customisation","q":"Can I customise a design?","a":"Yes. Our design studio can personalise metal colour, stone, size and engraving. Book a consultation through the Contact page."},
+  {"category":"Care & Customisation","q":"How should I care for my jewellery?","a":"Store pieces separately in the pouch provided, avoid perfume and chlorine, and visit any store for complimentary annual cleaning."}
+]

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" width="800" height="800" role="img" aria-label="Nitya Slim Gold Bangles (Pair)">
+  <defs>
+    <linearGradient id="m29" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff4c7"/><stop offset=".35" stop-color="#ecc66a"/>
+      <stop offset=".7" stop-color="#c9962f"/><stop offset="1" stop-color="#8a6118"/>
+    </linearGradient>
+    <radialGradient id="mb29" cx=".35" cy=".3" r=".8">
+      <stop offset="0" stop-color="#fff4c7"/><stop offset=".45" stop-color="#ecc66a"/><stop offset="1" stop-color="#8a6118"/>
+    </radialGradient>
+    <radialGradient id="g29" cx=".35" cy=".3" r=".9">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#d6e8fb"/><stop offset="1" stop-color="#7fa6cf"/>
+    </radialGradient>
+    <radialGradient id="p29" cx=".35" cy=".3" r=".9">
+      <stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#f6eee0"/><stop offset="1" stop-color="#d4c3a6"/>
+    </radialGradient>
+    <filter id="s29" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#6e5236" flood-opacity=".28"/>
+    </filter>
+    <radialGradient id="bg29" cx=".5" cy=".42" r=".75"><stop offset="0" stop-color="#fffaf2"/><stop offset="1" stop-color="#f1e2c8"/></radialGradient>
+  </defs>
+  <rect width="800" height="800" fill="url(#bg29)"/>
+  <ellipse cx="400" cy="720" rx="260" ry="26" fill="#8b6a48" opacity=".08"/>
+  <g filter="url(#s29)"><ellipse cx="400" cy="400" rx="250" ry="120" fill="none" stroke="url(#m29)" stroke-width="24"/><ellipse cx="400" cy="444" rx="250" ry="120" fill="none" stroke="url(#m29)" stroke-width="24"/></g>
+  <path d="M640 138 L642.4 147.6 L652 150 L642.4 152.4 L640 162 L637.6 152.4 L628 150 L637.6 147.6Z" fill="#fff" opacity=".9"/><path d="M160 631 L161.8 638.2 L169 640 L161.8 641.8 L160 649 L158.2 641.8 L151 640 L158.2 638.2Z" fill="#fff" opacity=".9"/>
+  <text x="400" y="770" text-anchor="middle" font-family="Georgia, serif" font-size="16" letter-spacing="6" fill="#a8865f" opacity=".55">MODERN JEWELLERS</text>
+</svg>

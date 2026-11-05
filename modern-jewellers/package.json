@@ -1,0 +1,28 @@
+{
+  "name": "modern-jewellers",
+  "private": true,
+  "version": "2.6.1",
+  "type": "module",
+  "description": "Modern Jewellers — premium Indian jewellery e-commerce demo (React + Vite + Tailwind).",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate:catalogue": "node scripts/build-catalogue.mjs",
+    "generate:documents": "python3 scripts/generate_documents.py"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.1.0",
+    "@fontsource/jost": "^5.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "vite": "^5.4.11"
+  }
+}

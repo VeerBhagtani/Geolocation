@@ -1,0 +1,41 @@
+Product ID,Product Name,Category,Metal,Purity,Weight (g),Unit Price (INR),Online Stock,Mumbai Store,New Delhi Store,Bengaluru Store,Hyderabad Store,Jaipur Store,Kolkata Store,Chennai Store,Ahmedabad Store,Total Units,Stock Value (INR),Status,Reorder Level,Last Audit
+MJ-GR-1001,Aarohi Filigree Gold Ring,Rings,Gold,22K (916),4.2,31450,18,0,3,1,4,2,0,3,1,32,1006400,Healthy,8,2026-10-31
+MJ-GR-1002,Padmini Lotus Ruby Cocktail Ring,Rings,Gold,22K (916),6.85,54800,7,2,0,3,1,4,2,0,3,22,1205600,Healthy,8,2026-10-31
+MJ-GR-1003,Ira Everyday Gold Band,Rings,Gold,18K (750),2.4,16900,42,4,2,0,3,1,4,2,0,58,980200,Healthy,8,2026-10-31
+MJ-DR-1004,Celestia Solitaire Diamond Ring,Rings,Diamond,18K (750),3.9,148500,5,1,4,2,0,3,1,4,2,22,3267000,Healthy,3,2026-10-31
+MJ-DR-1005,Nakshatra Halo Diamond Ring,Rings,Diamond,18K (750),4.1,86200,9,3,1,4,2,0,3,1,4,27,2327400,Healthy,8,2026-10-31
+MJ-DR-1006,Anant Eternity Pavé Band,Rings,Diamond,18K (750),3.3,72400,12,0,3,1,4,2,0,3,1,26,1882400,Healthy,8,2026-10-31
+MJ-SR-1007,Chandra Moonstone Silver Ring,Rings,Silver,92.5% Silver,5.6,3450,35,2,0,3,1,4,2,0,3,50,172500,Healthy,8,2026-10-31
+MJ-GN-2001,Rani Haar Temple Necklace,Necklaces,Gold,22K (916),48.6,412000,3,4,2,0,3,1,4,2,0,19,7828000,Low,3,2026-10-31
+MJ-GN-2002,Meera Kundan Polki Choker,Necklaces,Gold,22K (916),38.2,235000,4,1,4,2,0,3,1,4,2,21,4935000,Healthy,3,2026-10-31
+MJ-GN-2003,Swarna Lakshmi Coin Necklace,Necklaces,Gold,22K (916),32.4,186500,6,3,1,4,2,0,3,1,4,24,4476000,Healthy,3,2026-10-31
+MJ-DN-2004,Aurora Diamond Rivière Necklace,Necklaces,Diamond,18K (750),22.8,565000,2,0,3,1,4,2,0,3,1,16,9040000,Low,3,2026-10-31
+MJ-DN-2005,Tara Diamond Pendant Necklace,Necklaces,Diamond,18K (750),3.2,48900,21,2,0,3,1,4,2,0,3,36,1760400,Healthy,8,2026-10-31
+MJ-SN-2006,Noor Sterling Silver Crescent Pendant,Necklaces,Silver,92.5% Silver,6.1,4250,28,4,2,0,3,1,4,2,0,44,187000,Healthy,8,2026-10-31
+MJ-SN-2007,Ganga Oxidised Silver Necklace,Necklaces,Silver,92.5% Silver,42,6800,15,1,4,2,0,3,1,4,2,32,217600,Healthy,8,2026-10-31
+MJ-GN-2008,Lekha Gold Bar Chain,Necklaces,Gold,18K (750),3.6,21300,0,3,1,4,2,0,3,1,4,18,383400,Out of Stock,8,2026-10-31
+MJ-GE-3001,Rajwadi Gold Jhumkas,Earrings,Gold,22K (916),18.4,78400,11,0,3,1,4,2,0,3,1,25,1960000,Healthy,8,2026-10-31
+MJ-DE-3002,Solitaire Diamond Studs,Earrings,Diamond,18K (750),1.8,96000,14,2,0,3,1,4,2,0,3,29,2784000,Healthy,8,2026-10-31
+MJ-GE-3003,Chandbali Pearl Earrings,Earrings,Gold,22K (916),16.2,64200,8,4,2,0,3,1,4,2,0,24,1540800,Healthy,8,2026-10-31
+MJ-SE-3004,Mira Silver Hoop Earrings,Earrings,Silver,92.5% Silver,4.4,2950,50,1,4,2,0,3,1,4,2,67,197650,Healthy,8,2026-10-31
+MJ-DE-3005,Ayra Diamond Drop Earrings,Earrings,Diamond,18K (750),5.2,112800,6,3,1,4,2,0,3,1,4,24,2707200,Healthy,3,2026-10-31
+MJ-GB-4001,Kaveri Gold Link Bracelet,Bracelets,Gold,22K (916),16.8,92600,10,0,3,1,4,2,0,3,1,24,2222400,Healthy,8,2026-10-31
+MJ-DB-4002,Lumière Diamond Tennis Bracelet,Bracelets,Diamond,18K (750),11.2,248000,3,2,0,3,1,4,2,0,3,18,4464000,Low,3,2026-10-31
+MJ-SB-4003,Charm Story Silver Bracelet,Bracelets,Silver,92.5% Silver,9.6,5400,24,4,2,0,3,1,4,2,0,40,216000,Healthy,8,2026-10-31
+MJ-GB-4004,Rosé Delicate Chain Bracelet,Bracelets,Gold,18K (750),3.1,28900,2,1,4,2,0,3,1,4,2,19,549100,Low,8,2026-10-31
+MJ-GG-5001,Maharani Carved Gold Bangles (Pair),Bangles,Gold,22K (916),46,296000,4,3,1,4,2,0,3,1,4,22,6512000,Healthy,3,2026-10-31
+MJ-GG-5002,Shahi Antique Gold Kada,Bangles,Gold,22K (916),28.5,124500,5,0,3,1,4,2,0,3,1,19,2365500,Healthy,3,2026-10-31
+MJ-DG-5003,Zoya Diamond Studded Bangle,Bangles,Diamond,18K (750),21.4,318000,3,2,0,3,1,4,2,0,3,18,5724000,Low,3,2026-10-31
+MJ-SG-5004,Tarini Silver Bangles (Set of 4),Bangles,Silver,92.5% Silver,38,7900,19,4,2,0,3,1,4,2,0,35,276500,Healthy,8,2026-10-31
+MJ-GG-5005,Nitya Slim Gold Bangles (Pair),Bangles,Gold,22K (916),12.6,68700,16,1,4,2,0,3,1,4,2,33,2267100,Healthy,8,2026-10-31
+MJ-MS-6001,Saubhagya Diamond Mangalsutra,Mangalsutra,Diamond,18K (750),8.4,74600,13,3,1,4,2,0,3,1,4,31,2312600,Healthy,8,2026-10-31
+MJ-MS-6002,Parampara Vati Mangalsutra,Mangalsutra,Gold,22K (916),11.2,58300,9,0,3,1,4,2,0,3,1,23,1340900,Healthy,8,2026-10-31
+MJ-MS-6003,Sutra Minimal Bracelet Mangalsutra,Mangalsutra,Gold,18K (750),3.8,26400,22,2,0,3,1,4,2,0,3,37,976800,Healthy,8,2026-10-31
+MJ-BS-7001,Shubh Vivaah Polki Bridal Set,Bridal Sets,Gold,22K (916),142,875000,2,4,2,0,3,1,4,2,0,18,15750000,Low,3,2026-10-31
+MJ-BS-7002,Gulnaar Diamond Bridal Set,Bridal Sets,Diamond,18K (750),96,1140000,1,1,4,2,0,3,1,4,2,18,20520000,Low,3,2026-10-31
+MJ-BS-7003,Kesar Temple Bridal Set,Bridal Sets,Gold,22K (916),118,620000,3,3,1,4,2,0,3,1,4,21,13020000,Low,3,2026-10-31
+MJ-AC-8001,Sitara Kundan Maang Tikka,Accessories,Gold,22K (916),9.8,38600,10,0,3,1,4,2,0,3,1,24,926400,Healthy,8,2026-10-31
+MJ-AC-8002,Heritage Gold Cufflinks,Accessories,Gold,22K (916),12.4,42000,8,2,0,3,1,4,2,0,3,23,966000,Healthy,8,2026-10-31
+MJ-AC-8003,Mayura Peacock Diamond Brooch,Accessories,Diamond,18K (750),14.6,135000,2,4,2,0,3,1,4,2,0,18,2430000,Low,3,2026-10-31
+MJ-AC-8004,Ghungroo Silver Payal (Pair),Accessories,Silver,92.5% Silver,28,4800,30,1,4,2,0,3,1,4,2,47,225600,Healthy,8,2026-10-31
+MJ-AC-8005,Phool Diamond Nose Pin,Accessories,Diamond,18K (750),0.6,12600,40,3,1,4,2,0,3,1,4,58,730800,Healthy,8,2026-10-31

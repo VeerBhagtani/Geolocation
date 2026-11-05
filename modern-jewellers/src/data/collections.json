@@ -1,0 +1,7 @@
+[
+  {"slug":"royal","name":"Royal Collection","tagline":"Heirlooms fit for maharanis","banner":"/images/banners/collection-royal.svg","description":"Inspired by the courts of Jaipur, Hyderabad and Mysore — temple gold, polki and kundan masterpieces crafted by fourth-generation karigars."},
+  {"slug":"bridal","name":"Bridal Collection","tagline":"For the most beautiful day of your life","banner":"/images/banners/collection-bridal.svg","description":"Complete bridal trousseaus — from the maang tikka to the payal — designed to be treasured for generations."},
+  {"slug":"everyday","name":"Everyday Collection","tagline":"Fine jewellery for real life","banner":"/images/banners/collection-everyday.svg","description":"Lightweight gold, diamonds and sterling silver designed for the office, brunch and everything in between."},
+  {"slug":"festival","name":"Festival Collection","tagline":"Celebrate Diwali, Navratri & Eid in gold","banner":"/images/banners/collection-festival.svg","description":"Jhumkas, coin necklaces and kadas made to shine through every pooja, garba and family gathering."},
+  {"slug":"limited","name":"Limited Edition","tagline":"Rare. Numbered. Unrepeatable.","banner":"/images/banners/collection-limited.svg","description":"Small-batch creations featuring exceptional stones — each piece numbered and accompanied by a certificate of provenance."}
+]

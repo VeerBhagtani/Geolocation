@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /the-gold-room
+Disallow: /vault/
+Disallow: /confidential/
+Disallow: /downloads/private/

@@ -1,0 +1,7 @@
+[
+  {"code":"WELCOME10","type":"percent","value":10,"min":0,"label":"10% off your first order"},
+  {"code":"FESTIVE15","type":"percent","value":15,"min":50000,"label":"15% off orders above ₹50,000"},
+  {"code":"SHAADI25K","type":"flat","value":25000,"min":300000,"label":"₹25,000 off bridal orders above ₹3,00,000"},
+  {"code":"SILVER500","type":"flat","value":500,"min":4000,"label":"₹500 off orders above ₹4,000"},
+  {"code":"GOLDROOM25","type":"percent","value":25,"min":0,"label":"25% Gold Room privilege","secret":true}
+]
